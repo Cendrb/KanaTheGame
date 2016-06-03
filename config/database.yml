@@ -23,7 +23,7 @@ default: &default
 
 development:
   <<: *default
-  database: untitled_development
+  database: kana_development
   username: postgres
   password: danjegay
 
@@ -59,7 +59,7 @@ development:
 # Do not set this db to the same as development or production.
 test:
   <<: *default
-  database: untitled_test
+  database: kana_test
   username: postgres
   password: danjegay
 
@@ -84,6 +84,6 @@ test:
 #
 production:
   <<: *default
-  database: untitled_production
+  database: kana_production
   username: untitled
   password: <%= ENV['UNTITLED_DATABASE_PASSWORD'] %>
