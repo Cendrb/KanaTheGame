@@ -1,0 +1,17 @@
+# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  board_data: MyText
+  height: 1
+  width: 1
+  started: false
+  started_on: 2016-06-03 22:04:40
+  ended_on: 2016-06-03 22:04:40
+
+two:
+  board_data: MyText
+  height: 1
+  width: 1
+  started: false
+  started_on: 2016-06-03 22:04:40
+  ended_on: 2016-06-03 22:04:40

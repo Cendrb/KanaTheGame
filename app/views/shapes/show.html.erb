@@ -1,0 +1,19 @@
+<p id="notice"><%= notice %></p>
+
+<p>
+  <strong>Name:</strong>
+  <%= @shape.name %>
+</p>
+
+<p>
+  <strong>Points:</strong>
+  <%= @shape.points %>
+</p>
+
+<p>
+  <strong>Board data:</strong>
+  <%= @shape.board_data %>
+</p>
+
+<%= link_to 'Edit', edit_shape_path(@shape) %> |
+<%= link_to 'Back', shapes_path %>
