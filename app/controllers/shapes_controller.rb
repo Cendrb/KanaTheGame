@@ -25,10 +25,11 @@ class ShapesController < ApplicationController
   # POST /shapes.json
   def create
     @shape = Shape.new(shape_params)
+    @shape.board_data = BoardShape.load(params[:shape][:board_data])
 
     respond_to do |format|
       if @shape.save
-        format.html { redirect_to @shape, notice: 'Shape was successfully created.' }
+        format.html { redirect_to shapes_path, notice: 'Shape was successfully created.' }
         format.json { render :show, status: :created, location: @shape }
       else
         format.html { render :new }
@@ -40,9 +41,10 @@ class ShapesController < ApplicationController
   # PATCH/PUT /shapes/1
   # PATCH/PUT /shapes/1.json
   def update
+    @shape.board_data = BoardShape.load(params[:shape][:board_data])
     respond_to do |format|
       if @shape.update(shape_params)
-        format.html { redirect_to @shape, notice: 'Shape was successfully updated.' }
+        format.html { redirect_to shapes_path, notice: 'Shape was successfully updated.' }
         format.json { render :show, status: :ok, location: @shape }
       else
         format.html { render :edit }
@@ -69,6 +71,6 @@ class ShapesController < ApplicationController
 
     # Never trust parameters from the scary internet, only allow the white list through.
     def shape_params
-      params.require(:shape).permit(:name, :points, :board_data)
+      params.require(:shape).permit(:name, :points)
     end
 end

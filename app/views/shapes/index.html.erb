@@ -2,30 +2,12 @@
 
 <h1>Shapes</h1>
 
-<table>
-  <thead>
-    <tr>
-      <th>Name</th>
-      <th>Points</th>
-      <th>Board data</th>
-      <th colspan="3"></th>
-    </tr>
-  </thead>
-
-  <tbody>
-    <% @shapes.each do |shape| %>
-      <tr>
-        <td><%= shape.name %></td>
-        <td><%= shape.points %></td>
-        <td><%= shape.board_data %></td>
-        <td><%= link_to 'Show', shape %></td>
-        <td><%= link_to 'Edit', edit_shape_path(shape) %></td>
-        <td><%= link_to 'Destroy', shape, method: :delete, data: { confirm: 'Are you sure?' } %></td>
-      </tr>
-    <% end %>
-  </tbody>
-</table>
-
-<br>
+<% @shapes.each do |shape| %>
+    <div>
+      <h2><%= link_to shape.name, edit_shape_path(shape) %></h2>
+      <p><%= shape.points %> points</p>
+      <div class="shape_board_render" data-json="<%= BoardShape.dump(shape.board_data) %>"></div>
+    </div>
+<% end %>
 
 <%= link_to 'New Shape', new_shape_path %>

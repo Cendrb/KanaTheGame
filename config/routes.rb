@@ -1,4 +1,13 @@
 Rails.application.routes.draw do
+
+  root to: 'welcome#welcome'
+
+  get 'matchmaking' => 'welcome#matchmaking'
+
+  get 'spectating' => 'welcome#spectating'
+
+  get 'administration' => 'welcome#administration'
+
   resources :users
   resources :shapes
   resources :players

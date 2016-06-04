@@ -19,6 +19,9 @@ gem 'coffee-rails', '~> 4.1.0'
 # Material Icons by Google
 gem 'material_icons'
 
+# Color picker
+gem 'jquery-minicolors-rails'
+
 # Use jquery as the JavaScript library
 gem 'jquery-rails'
 # Turbolinks makes navigating your web application faster. Read more: https://github.com/turbolinks/turbolinks
@@ -42,7 +45,7 @@ end
 
 group :development do
   # Access an IRB console on exception pages or by using <%= console %> anywhere in the code.
-  gem 'web-console'
+  #gem 'web-console'
 
   gem 'rails-erd'
 end
