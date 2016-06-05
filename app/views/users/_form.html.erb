@@ -1,42 +1,33 @@
-<%= form_for(user) do |f| %>
-  <% if user.errors.any? %>
-    <div id="error_explanation">
-      <h2><%= pluralize(user.errors.count, "error") %> prohibited this user from being saved:</h2>
+<%= form_for(@user, html: {role: 'form'}) do |f| %>
+    <% if @user.errors.any? %>
+        <div id="error_explanation">
+          <h2><%= pluralize(@user.errors.count, "error") %> prohibited this user from being saved:</h2>
 
-      <ul>
-      <% user.errors.full_messages.each do |message| %>
-        <li><%= message %></li>
-      <% end %>
-      </ul>
+          <ul>
+            <% @user.errors.full_messages.each do |message| %>
+                <li><%= message %></li>
+            <% end %>
+          </ul>
+        </div>
+    <% end %>
+
+    <div class="field">
+      <%= f.label "Email" %><br>
+      <%= f.email_field :email %>
     </div>
-  <% end %>
-
-  <div class="field">
-    <%= f.label :email %>
-    <%= f.text_field :email %>
-  </div>
-
-  <div class="field">
-    <%= f.label :nickname %>
-    <%= f.text_field :nickname %>
-  </div>
-
-  <div class="field">
-    <%= f.label :hashed_password %>
-    <%= f.text_field :hashed_password %>
-  </div>
-
-  <div class="field">
-    <%= f.label :salt %>
-    <%= f.text_field :salt %>
-  </div>
-
-  <div class="field">
-    <%= f.label :access_level %>
-    <%= f.number_field :access_level %>
-  </div>
-
-  <div class="actions">
-    <%= f.submit %>
-  </div>
+    <div class="field">
+      <%= f.label "Nickname" %><br>
+      <%= f.text_field :nickname %>
+    </div>
+    <div class="field">
+      <%= f.label "Heslo", 'Heslo (pro heslo žádná omezení neplatí)' %><br>
+      <%= f.password_field :password %>
+    </div>
+    <div class="field">
+      <%= f.label "Potvrzení hesla", 'Potvrzení hesla' %><br>
+      <%= f.password_field :password_confirmation %>
+    </div>
+    <div class="actions">
+      <%= f.submit "Zaregistrovat" %>
+    </div>
 <% end %>

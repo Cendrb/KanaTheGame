@@ -1,4 +1,6 @@
-class ShapeRenderer
+App.shapes.ShapeRenderer = class ShapeRenderer
+  @one_stone_width: 48
+
   constructor: (board_div) ->
     @main_element = board_div
 
@@ -23,40 +25,35 @@ class ShapeRenderer
         total_height = Number(stone['y'])
     return total_height + 1
 
-class MatchRenderer
+App.shapes.MatchRenderer = class MatchRenderer
+  @one_stone_width: 48
+
   constructor: (board_div) ->
     @main_element = board_div
 
   render: (board_obj) ->
+    console.log(board_obj)
+    @main_element.css('width', board_obj['width'] * App.shapes.MatchRenderer.one_stone_width)
+    @main_element.css('height', board_obj['height'] * App.shapes.MatchRenderer.one_stone_width)
     stones_obj = board_obj['stones']
     if window.players
       for stone in stones_obj
         this.render_stone(stone['x'], stone['y'], stone['player_id'])
     else
-      this.fetch_players(json_string)
+      this.fetch_players(board_obj)
 
   render_stone: (x, y, player_id) ->
     stone = document.createElement('div')
     stone.className = 'stone match_stone'
     stone.style.top = y * 50 + 'px'
     stone.style.left = x * 50 + 'px'
-    console.log(window.players)
     player = (window.players.filter (obj) ->
-      console.log(obj.id)
-      console.log(player_id)
       return obj.id == player_id)[0]
     stone.innerHTML = player.name
     stone.style.backgroundColor = player.color
     @main_element.append(stone)
 
-  fetch_players: (json_string) ->
+  fetch_players: (board_obj) ->
     $.getJSON "/players.json", (data) =>
       window.players = data
-      this.parse_and_render(json_string)
-
-$( document ).ready ->
-  $('.shape_board_render').each ->
-    shape = $(this);
-    renderer = new ShapeRenderer(shape);
-    renderer.render(shape.data('json'))
-    shape.css('height', renderer.get_total_height(shape.data('json')) * 50)
+      this.render(board_obj)
