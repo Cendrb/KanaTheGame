@@ -1,7 +1,22 @@
 $ ->
+  selection_mode = 'nothing'
+
   $("h1").on 'click', (event) ->
-    console.log("clicked")
     App.match.give_up()
+
+  $("#main_board").on 'click', (event) ->
+    if selection_mode == SelectionMode.stone_selected
+      console.log('Try a move')
+
+  $(".match_stone").on 'click', (event) ->
+    if selection_mode == SelectionMode.nothing
+      console.log('Select a stone')
+    if selection_mode == SelectionMode.stone_selected
+      console.log('Try a move while swaping')
+
+class SelectionMode
+  @nothing: 'nothing'
+  @stone_selected: 'stone_selected'
 
 App.match = App.cable.subscriptions.create "MatchChannel",
   connected: ->
