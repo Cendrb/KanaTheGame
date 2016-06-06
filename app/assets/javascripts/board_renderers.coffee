@@ -32,28 +32,24 @@ App.shapes.MatchRenderer = class MatchRenderer
     @main_element = board_div
 
   render: (board_obj) ->
-    console.log(board_obj)
     @main_element.css('width', board_obj['width'] * App.shapes.MatchRenderer.one_stone_width)
     @main_element.css('height', board_obj['height'] * App.shapes.MatchRenderer.one_stone_width)
     stones_obj = board_obj['stones']
-    if window.players
+    if App.players.ready()
       for stone in stones_obj
         this.render_stone(stone['x'], stone['y'], stone['player_id'])
     else
-      this.fetch_players(board_obj)
+      App.players.get (players) =>
+        this.render(board_obj)
 
   render_stone: (x, y, player_id) ->
     stone = document.createElement('div')
     stone.className = 'stone match_stone'
     stone.style.top = y * 50 + 'px'
     stone.style.left = x * 50 + 'px'
-    player = (window.players.filter (obj) ->
-      return obj.id == player_id)[0]
+    stone.dataset.x = x
+    stone.dataset.y = y
+    player = App.players.find_by_id(player_id)
     stone.innerHTML = player.name
     stone.style.backgroundColor = player.color
     @main_element.append(stone)
-
-  fetch_players: (board_obj) ->
-    $.getJSON "/players.json", (data) =>
-      window.players = data
-      this.render(board_obj)

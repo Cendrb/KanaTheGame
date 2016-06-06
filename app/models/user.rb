@@ -4,10 +4,13 @@ class User < ApplicationRecord
   validate :password_must_be_present
 
   has_many :match_signups
-  belongs_to :match, foreign_key: 'current_match_id'
 
   attr_accessor :password_confirmation
   attr_reader :password
+
+  def current_match
+    return Match.joins(:match_signups).where('started = true AND match_signups.user_id = ?', self.id).first
+  end
 
   def password=(password)
     @password = password
