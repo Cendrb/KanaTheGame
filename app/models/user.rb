@@ -12,6 +12,10 @@ class User < ApplicationRecord
     return Match.joins(:match_signups).where('started = true AND match_signups.user_id = ?', self.id).first
   end
 
+  def current_match_signup
+    return MatchSignup.joins(:match).where('matches.started = true AND user_id = ?', self.id).first
+  end
+
   def password=(password)
     @password = password
 

@@ -8,6 +8,6 @@ class MatchSignup < ApplicationRecord
   after_initialize :setup_defaults
 
   def setup_defaults
-    self.current_points  ||= 0
+    self.spent_points  ||= 0
   end
 end

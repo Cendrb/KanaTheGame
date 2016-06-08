@@ -4,7 +4,7 @@ class BoardShape < Board
   end
 
   def add_stone_at(x, y, stone_owner_flag)
-    _add_stone_at(x, y, StoneShape.new(stone_owner_flag))
+    _set_stone_at(x, y, StoneShape.new(stone_owner_flag))
   end
 
   def self.load(json)

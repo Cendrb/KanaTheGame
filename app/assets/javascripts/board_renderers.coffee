@@ -34,6 +34,7 @@ App.shapes.MatchRenderer = class MatchRenderer
   render: (board_obj) ->
     @main_element.css('width', board_obj['width'] * App.shapes.MatchRenderer.one_stone_width)
     @main_element.css('height', board_obj['height'] * App.shapes.MatchRenderer.one_stone_width)
+    @main_element.empty()
     stones_obj = board_obj['stones']
     if App.players.ready()
       for stone in stones_obj

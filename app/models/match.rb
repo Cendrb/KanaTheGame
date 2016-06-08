@@ -3,6 +3,8 @@ class Match < ApplicationRecord
   has_many :fulfilled_shapes
   serialize :board_data, BoardMatch
 
+  belongs_to :currently_playing, class_name: 'Player', foreign_key: 'currently_playing_id', required: false
+
   def signup_user(user)
     if user.current_match != self
       signup = MatchSignup.new()

@@ -11,17 +11,14 @@ $ ->
       # board absolute location
       boardAbsoluteX = $(this).offset().left
       boardAbsoluteY = $(this).offset().top
-      #console.log("Absolutes x = #{boardAbsoluteX}; y = #{boardAbsoluteY}")
 
       # click relative position
       clickRelativeToBoardX = event.pageX - boardAbsoluteX
       clickRelativeToBoardY = event.pageY - boardAbsoluteY
-      #console.log("Relatives x = #{clickRelativeToBoardX}; y = #{clickRelativeToBoardY}")
 
       # click stone coords
       xStoneCoord = Math.floor(clickRelativeToBoardX / 50)
       yStoneCoord = Math.floor(clickRelativeToBoardY / 50)
-      #console.log("Coords x = #{xStoneCoord}; y = #{yStoneCoord}")
 
       App.match.play(selected_stone.x, selected_stone.y, xStoneCoord, yStoneCoord)
       deselect_stone()
@@ -49,48 +46,58 @@ $ ->
 App.match = App.cable.subscriptions.create "MatchChannel",
   connected: ->
     # Called when the subscription is ready for use on the server
-    console.log("Connected to ActionCable")
+    this.post_status("Connected to ActionCable")
 
   disconnected: ->
     # Called when the subscription has been terminated by the server
-    console.log("Discnnected from ActionCable")
+    this.post_status("Discnnected from ActionCable")
 
   received: (data) ->
     # Called when there's incoming data on the websocket for this channel
-    console.log(data)
     switch data['mode']
-      when 'board_render' then this.render_board(JSON.parse(data['board_data']), JSON.parse(data['current_points']))
+      when 'board_render' then this.render_board(JSON.parse(data['board_data']), JSON.parse(data['signups']), data['message'], data['currently_playing'], data['this_player_id'])
       else alert 'unknown action received: ' + data['mode']
 
   play: (sourceX, sourceY, targetX, targetY) ->
-    console.log("Trying to move from #{sourceX}, #{sourceY} to #{targetX}, #{targetY}")
+    this.post_status("Trying to move from #{sourceX}, #{sourceY} to #{targetX}, #{targetY}")
     @perform 'play', sourceX: sourceX, sourceY: sourceY, targetX: targetX, targetY: targetY
 
   refresh: ->
-    console.log("Requesting board reload")
+    this.post_status("Requesting board reload")
     @perform 'refresh'
 
   give_up: ->
     @perform 'give_up'
 
   
-  render_board: (data, signups) ->
+  render_board: (data, signups, message, currently_playing_id, this_player_id) ->
     if App.players.ready()
-      console.log(signups)
+      currently_playing_bar = $("#currently_playing_bar")
+      currently_playing_bar.empty()
+      currently_playing_bar.text("current player: #{App.players.find_by_id(currently_playing_id).name}")
       points_bar = $("#match_current_points")
       points_bar.empty()
       for signup in signups
         name_element = document.createElement("span")
-        name_element.innerHTML = App.players.find_by_id(signup.id).name
+        name_element.innerHTML = App.players.find_by_id(signup.player_id).name
         points_element = document.createElement("span")
-        points_element.innerHTML = signup.current_points
+        points_element.innerHTML = " spent: " + signup.spent_points
         player_element = document.createElement("div")
         player_element.appendChild(name_element)
         player_element.appendChild(points_element)
         points_bar.append(player_element)
       renderer = new App.shapes.MatchRenderer($("#main_board"))
       renderer.render(data)
+      this.post_status(message)
+      #if currently_playing_id == this_player_id
       this.setup_stone_handlers()
     else
       App.players.get (players) =>
         this.render_board(data, signups)
+
+  post_status: (status) ->
+    if status != ""
+      current_date = new Date();
+      message = "#{status} #{current_date.getHours()}:#{current_date.getMinutes()}:#{current_date.getSeconds()}"
+      console.log(message)
+      $('#status_bar').text(message)
