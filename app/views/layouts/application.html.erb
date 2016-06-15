@@ -9,6 +9,15 @@
 </head>
 
 <body>
+<div id="currently_logged_in">
+  <% if current_user %>
+  You are logged in as <%= current_user.nickname %>
+      <br>
+      <%= link_to 'logout', logout_path %>
+  <% else %>
+  Pls <%= link_to 'login', login_path %>
+  <% end %>
+</div>
 <%= yield %>
 </body>
 </html>
