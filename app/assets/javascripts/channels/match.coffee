@@ -29,9 +29,11 @@ $ ->
       if !selected_stone
         console.log("======CLICKED ON STONE======")
         stone_being_clicked = true
-        x = $(this).data('x')
-        y = $(this).data('y')
-        select_stone(x, y)
+        # select only when it's your stone
+        if $("#main_board").data('this_player_id') == $(this).data('player_id')
+          x = $(this).data('x')
+          y = $(this).data('y')
+          select_stone(x, y)
 
   select_stone = (x, y) ->
     $(".match_stone[data-x='" + x + "'][data-y='" + y + "']").css('border', '2px solid red')
@@ -46,58 +48,62 @@ $ ->
 App.match = App.cable.subscriptions.create "MatchChannel",
   connected: ->
     # Called when the subscription is ready for use on the server
-    this.post_status("Connected to ActionCable")
+    this.post_status("connected to ActionCable", 'server')
 
   disconnected: ->
     # Called when the subscription has been terminated by the server
-    this.post_status("Discnnected from ActionCable")
+    this.post_status("ciscnnected from ActionCable", 'server')
 
   received: (data) ->
     # Called when there's incoming data on the websocket for this channel
     switch data['mode']
-      when 'board_render' then this.render_board(JSON.parse(data['board_data']), JSON.parse(data['signups']), data['message'], data['currently_playing'], data['this_player_id'])
+      when 'board_render' then this.render_board(JSON.parse(data['board_data']), JSON.parse(data['signups']), data['message'], data['currently_playing'], data['target'])
       else alert 'unknown action received: ' + data['mode']
 
   play: (sourceX, sourceY, targetX, targetY) ->
-    this.post_status("Trying to move from #{sourceX}, #{sourceY} to #{targetX}, #{targetY}")
+    this.post_status("trying to move from #{sourceX}, #{sourceY} to #{targetX}, #{targetY}", 'client')
     @perform 'play', sourceX: sourceX, sourceY: sourceY, targetX: targetX, targetY: targetY
 
   refresh: ->
-    this.post_status("Requesting board reload")
+    this.post_status("requesting board reload", 'client')
     @perform 'refresh'
 
   give_up: ->
     @perform 'give_up'
 
-  
-  render_board: (data, signups, message, currently_playing_id, this_player_id) ->
-    if App.players.ready()
-      currently_playing_bar = $("#currently_playing_bar")
-      currently_playing_bar.empty()
-      currently_playing_bar.text("current player: #{App.players.find_by_id(currently_playing_id).name}")
-      points_bar = $("#match_current_points")
-      points_bar.empty()
-      for signup in signups
-        name_element = document.createElement("span")
-        name_element.innerHTML = App.players.find_by_id(signup.player_id).name
-        points_element = document.createElement("span")
-        points_element.innerHTML = " spent: " + signup.spent_points
-        player_element = document.createElement("div")
-        player_element.appendChild(name_element)
-        player_element.appendChild(points_element)
-        points_bar.append(player_element)
-      renderer = new App.shapes.MatchRenderer($("#main_board"))
-      renderer.render(data)
-      this.post_status(message)
-      #if currently_playing_id == this_player_id
-      this.setup_stone_handlers()
-    else
-      App.players.get (players) =>
-        this.render_board(data, signups)
+  repopulate: ->
+    @perform 'repopulate'
 
-  post_status: (status) ->
+  
+  render_board: (data, signups, message, currently_playing_id, target) ->
+    if target == -1 || target == $("#main_board").data('this_player_id')
+      if App.players.ready()
+        currently_playing_bar = $("#currently_playing_bar")
+        currently_playing_bar.empty()
+        currently_playing_bar.text("current player: #{App.players.find_by_id(currently_playing_id).name}")
+        points_bar = $("#match_current_points")
+        points_bar.empty()
+        for signup in signups
+          name_element = document.createElement("span")
+          name_element.innerHTML = App.players.find_by_id(signup.player_id).name
+          points_element = document.createElement("span")
+          points_element.innerHTML = " spent: " + signup.spent_points
+          player_element = document.createElement("div")
+          player_element.appendChild(name_element)
+          player_element.appendChild(points_element)
+          points_bar.append(player_element)
+        renderer = new App.shapes.MatchRenderer($("#main_board"))
+        renderer.render(data)
+        this.post_status(message, 'server')
+        if currently_playing_id == $("#main_board").data('this_player_id')
+          this.setup_stone_handlers()
+      else
+        App.players.get (players) =>
+          this.render_board(data, signups, message, currently_playing_id, board_changed)
+
+  post_status: (status, side) ->
     if status != ""
       current_date = new Date();
-      message = "#{status} #{current_date.getHours()}:#{current_date.getMinutes()}:#{current_date.getSeconds()}"
+      message = "[#{side}] #{status} #{current_date.getHours()}:#{current_date.getMinutes()}:#{current_date.getSeconds()}"
       console.log(message)
       $('#status_bar').text(message)

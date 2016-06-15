@@ -68,6 +68,20 @@ class BoardMatch < Board
     _set_stone_at(x, y, StoneMatch.new(player_id))
   end
 
+  def repopulate(player_count, remove_old_stones = true)
+    if remove_old_stones
+      remove_all_stones
+    end
+    randomizer = Random.new
+    total_stones = (width * height) / 4
+    stones_per_player = total_stones / player_count
+    player_count.times do
+      stones_per_player.times do
+        randomizer.rand(0..width)
+      end
+    end
+  end
+
   def self.load(json)
     unless json.nil?
       attrs = JSON.parse(json)

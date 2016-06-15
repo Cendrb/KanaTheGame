@@ -1,6 +1,7 @@
 <h1>Welcome#matchmaking</h1>
-<p>Find me in app/views/welcome/matchmaking.html.erb</p>
+<% player = current_user.current_match_signup.player %>
+<p>ur culur ist <span style="background-color: #666666; color: <%= player.color %>;"><%= player.name %></span></p>
 <div id="currently_playing_bar">nobody shall play!!</div>
 <div id="match_current_points">u have no power here</div>
-<div class="match_board_render" id="main_board"></div>
+<div class="match_board_render" id="main_board" data-this_player_id="<%= player.id %>"></div>
 <div id="status_bar">no recent messages</div>

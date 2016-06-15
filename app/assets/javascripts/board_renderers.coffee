@@ -50,6 +50,7 @@ App.shapes.MatchRenderer = class MatchRenderer
     stone.style.left = x * 50 + 'px'
     stone.dataset.x = x
     stone.dataset.y = y
+    stone.dataset.player_id = player_id
     player = App.players.find_by_id(player_id)
     stone.innerHTML = player.name
     stone.style.backgroundColor = player.color

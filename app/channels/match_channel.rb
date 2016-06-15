@@ -4,11 +4,11 @@ class MatchChannel < ApplicationCable::Channel
     Match.find(4).signup_user(current_user)
     match = current_user.current_match
       if !match.currently_playing
-      puts current_user.current_match_signup.player.to_yaml
       match.currently_playing = current_user.current_match_signup.player
       match.save!
     end
     stream_from "match_" + current_user.current_match.id.to_s
+    send_current_match_status('render successful', current_user.current_match_signup.player.id)
   end
 
   def unsubscribed
@@ -44,13 +44,21 @@ class MatchChannel < ApplicationCable::Channel
 
       match.save!
       match_signup.save!
+      send_current_match_status(status)
+    else
+      send_current_match_status(status, current_user.current_match_signup.player.id)
     end
-
-    send_current_match_status(status)
   end
 
   def refresh
     send_current_match_status('render successful')
+  end
+
+  def repopulate
+    match = current_user.current_match
+    match.board_data.repopulate
+    match.save!
+    send_current_match_status('repopulation done')
   end
 
   def give_up
@@ -66,17 +74,16 @@ class MatchChannel < ApplicationCable::Channel
     match.started = true
     ActionCable.server.broadcast "match_" + current_user.match.id.to_s, board_data: BoardMatch.dump(match.board_data), mode: 'board_render'
 =end
-
   end
 
   private
-  def send_current_match_status(message = '')
+  def send_current_match_status(message = '', target = -1)
     match = current_user.current_match
     ActionCable.server.broadcast "match_" + match.id.to_s,
                                  board_data: BoardMatch.dump(match.board_data),
                                  mode: 'board_render', signups: match.match_signups.to_json,
                                  message: message,
                                  currently_playing: match.currently_playing.id,
-                                 this_player_id: current_user.current_match_signup.player.id
+                                 target: target
   end
 end

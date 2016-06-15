@@ -24,4 +24,9 @@ class Board
       @board_hash.delete([x, y])
     end
   end
+
+  protected
+  def remove_all_stones
+    @board_hash = Hash.new
+  end
 end
