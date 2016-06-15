@@ -2,6 +2,9 @@ $ ->
   $("h1").on 'click', (event) ->
     App.match.refresh()
 
+  $("#repopulate_board").on 'click', (event) ->
+    App.match.repopulate()
+
   selected_stone = null
   stone_being_clicked = false
 
@@ -76,6 +79,8 @@ App.match = App.cable.subscriptions.create "MatchChannel",
 
   
   render_board: (data, signups, message, currently_playing_id, target) ->
+    #if target == -1
+       #new Audio('http://adis.g6.cz/johncena/traitor.mp3').play()
     if target == -1 || target == $("#main_board").data('this_player_id')
       if App.players.ready()
         currently_playing_bar = $("#currently_playing_bar")

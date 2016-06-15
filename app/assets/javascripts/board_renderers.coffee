@@ -1,5 +1,5 @@
 App.shapes.ShapeRenderer = class ShapeRenderer
-  @one_stone_width: 48
+  @one_stone_width: 55
 
   constructor: (board_div) ->
     @main_element = board_div
@@ -26,7 +26,7 @@ App.shapes.ShapeRenderer = class ShapeRenderer
     return total_height + 1
 
 App.shapes.MatchRenderer = class MatchRenderer
-  @one_stone_width: 48
+  @one_stone_width: 55
 
   constructor: (board_div) ->
     @main_element = board_div

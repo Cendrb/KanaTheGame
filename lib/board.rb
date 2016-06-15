@@ -13,6 +13,10 @@ class Board
     return @board_hash[[x, y]]
   end
 
+  def exists_at?(x, y)
+    return @board_hash[[x, y]]!= nil
+  end
+
   protected
   def _set_stone_at(x, y, stone)
     @board_hash[[x, y]] = stone

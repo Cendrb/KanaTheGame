@@ -56,7 +56,7 @@ class MatchChannel < ApplicationCable::Channel
 
   def repopulate
     match = current_user.current_match
-    match.board_data.repopulate
+    match.board_data.repopulate([1, 2])
     match.save!
     send_current_match_status('repopulation done')
   end

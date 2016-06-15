@@ -1,9 +1,9 @@
 class BoardMatch < Board
-  attr_reader :width, :height
+  attr_accessor :width, :height
 
-  def initialize(width, height)
+  def initialize
     super()
-    @width, @height = width.to_i, height.to_i
+    @width, @height = 0, 0
   end
 
   def perform_move(source_x, source_y, target_x, target_y, sender_player_id, currently_playing_id)
@@ -68,24 +68,33 @@ class BoardMatch < Board
     _set_stone_at(x, y, StoneMatch.new(player_id))
   end
 
-  def repopulate(player_count, remove_old_stones = true)
+  def repopulate(player_ids, remove_old_stones = true)
     if remove_old_stones
       remove_all_stones
     end
     randomizer = Random.new
-    total_stones = (width * height) / 4
-    stones_per_player = total_stones / player_count
-    player_count.times do
+    total_stones = (width * height) / 5
+    stones_per_player = total_stones / player_ids.count
+    player_ids.each do |player_id|
       stones_per_player.times do
-        randomizer.rand(0..width)
+        x = 0
+        y = 0
+        loop do
+          x = randomizer.rand(0..(@width - 1))
+          y = randomizer.rand(0..(@height - 1))
+          break if !exists_at?(x, y)
+        end
+        set_stone_at(x, y, player_id)
       end
     end
   end
 
-  def self.load(json)
+  def BoardMatch.load(json)
     unless json.nil?
       attrs = JSON.parse(json)
-      obj = self.new(attrs['width'], attrs['height'])
+      obj = self.new
+      obj.width = attrs['width']
+      obj.height = attrs['height']
       attrs['stones'].each do |stone|
         obj.set_stone_at(stone['x'], stone['y'], stone['player_id'])
       end
@@ -93,7 +102,7 @@ class BoardMatch < Board
     return obj
   end
 
-  def self.dump(obj)
+  def BoardMatch.dump(obj)
     if obj
       final_array = []
       obj.each_stone(->(x, y, stone) { final_array << {x: x, y: y, player_id: stone.player_id} })
