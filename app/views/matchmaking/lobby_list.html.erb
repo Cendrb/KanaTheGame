@@ -7,7 +7,20 @@
       <% if match.password && match.password != '' %>
         <%= mi.lock %>
       <% else %>
-        <%= button_to 'Click to join', join_match_path(match_id: match.id) %>
+        <%= button_to 'Join', join_match_path(match_id: match.id) %>
+      <% end %>
+    </div>
+<% end %>
+<% @data[:spectatable_matches].each do |match| %>
+    <div class="lobby_line">
+      <h2><%= match.id %></h2>
+      <div>Board: <%= BoardMatch.dump(match.board_data) %></div>
+      <div>Type: <%= match.match_type %></div>
+      <div>State: <%= match.state %></div>
+      <% if match.password && match.password != '' %>
+          <%= mi.lock %>
+      <% else %>
+          <%= button_to 'Spectate', spectate_match_path(match_id: match.id) %>
       <% end %>
     </div>
 <% end %>

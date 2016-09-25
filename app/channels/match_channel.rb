@@ -12,9 +12,9 @@ class MatchChannel < ApplicationCable::Channel
         match.currently_playing = user.current_match_signup.player
         match.save!
       end
-      send_mode(:play)
+      send_mode(:play, user.current_match_signup.player.id)
     else
-      send_mode(:spectate)
+      send_mode(:spectate, -1)
     end
     puts "STATE OF THIS MATCH IS: #{match.state}"
     send_state()
@@ -67,6 +67,8 @@ class MatchChannel < ApplicationCable::Channel
   end
 
   def refresh
+    # rails use CACHE because they don't notice the change from the previous move - this force reloads the match from the database
+    current_user_connected.current_match.reload
     # refresh board only for the request sender
     send_current_match_status('refresh successful', current_user_connected)
   end
@@ -108,9 +110,9 @@ class MatchChannel < ApplicationCable::Channel
   end
 
   private
-  def send_mode(mode)
+  def send_mode(mode, player_id)
     match = current_user_connected.current_match
-    MatchBroadcaster.send_mode(match, current_user_connected, mode)
+    MatchBroadcaster.send_mode(match, current_user_connected, mode, player_id)
   end
 
   def send_state

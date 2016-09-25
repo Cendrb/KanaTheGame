@@ -19,7 +19,17 @@ $ ->
           when 'set_mode'
             if $("#main_board").data('current_user_id') == data['target_user_id']
               App.match.mode = data['player_mode']
+              App.match.player_id = data['player_id']
               $('#mode').text(data['player_mode'])
+
+              App.players.get (players_unused) =>
+                player_object = App.players.find_by_id(data['player_id'])
+                player_span = $('#this_player')
+                if (player_object != null)
+                  player_span.text(player_object.name)
+                  player_span.css('color', player_object.color)
+                else
+                  player_span.text('just a spectator')
           when 'board_render'
             this.render_board(JSON.parse(data['board_data']), JSON.parse(data['signups']), data['message'], data['currently_playing'], data['target_user_id'])
           else alert 'unknown action received: ' + data['mode']
@@ -60,7 +70,7 @@ $ ->
             renderer = new App.shapes.MatchRenderer($("#main_board"))
             renderer.render(data)
             this.post_status('board changed: ' + message, 'server')
-            if App.match.state == 'playing' && App.match.mode == 'play' && currently_playing_id == $("#main_board").data('this_player_id')
+            if App.match.state == 'playing' && App.match.mode == 'play' && currently_playing_id == App.match.player_id
               this.setup_stone_handlers()
           else
             App.players.get (players) =>
@@ -106,8 +116,8 @@ $ ->
         if !selected_stone
           console.log("======CLICKED ON STONE======")
           stone_being_clicked = true
-          # select only when it's your stone
-          if $("#main_board").data('this_player_id') == $(this).data('player_id')
+          # select only when it's your stone and you are not a spectator
+          if App.match.player_id != -1 && App.match.player_id == $(this).data('player_id')
             x = $(this).data('x')
             y = $(this).data('y')
             select_stone(x, y)

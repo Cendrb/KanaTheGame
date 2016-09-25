@@ -28,10 +28,11 @@ class MatchBroadcaster
   # @param [Match] match
   # @param [User] target_user
   # @param [String] mode
-  def MatchBroadcaster.send_mode(match, target_user, mode)
+  def MatchBroadcaster.send_mode(match, target_user, mode, player_id)
       ActionCable.server.broadcast "match_" + match.id.to_s,
                                    mode: 'set_mode',
                                    player_mode: mode,
-                                   target_user_id: target_user.id
+                                   target_user_id: target_user.id,
+                                   player_id: player_id
     end
 end

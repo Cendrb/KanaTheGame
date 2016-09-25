@@ -15,7 +15,10 @@ App.players.ready = ->
     return false
   
 App.players.find_by_id = (id) ->
-  player = (App.players._players.filter (obj) ->
-    return obj.id == id)[0]
-  return player
+  players_array = (App.players._players.filter (obj) ->
+    return obj.id == id)
+  if players_array.length > 0
+    return players_array[0]
+  else
+    return null
   

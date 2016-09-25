@@ -10,7 +10,7 @@ Rails.application.routes.draw do
 
   post 'matchmaking/open_match', as: 'start_open'
 
-  post 'matchmaking/spectate', as: 'start_spectate'
+  post 'matchmaking/spectate', as: 'spectate_match'
 
   post 'matchmaking/join', as: 'join_match'
 

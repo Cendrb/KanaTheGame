@@ -7,7 +7,8 @@ class MatchmakingController < ApplicationController
 
   def lobby_list
     @data = {}
-    @data[:open_matches] = Match.joins(:match_signups).where(state: :waiting, match_type: :open)
+    @data[:open_matches] = Match.where(state: :waiting, match_type: :open)
+    @data[:spectatable_matches] = Match.where(state: :playing, match_type: :open)
   end
 
   # renders match view, wait/play/spectate
@@ -58,7 +59,9 @@ class MatchmakingController < ApplicationController
 
   def spectate
     match = Match.find(params[:match_id])
-    current_user.current_match = match
+    user = current_user
+    user.current_match = match
+    user.save!
     redirect_to match_path(match)
   end
 
