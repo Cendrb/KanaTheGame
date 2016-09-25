@@ -59,7 +59,7 @@ $ ->
               points_bar.append(player_element)
             renderer = new App.shapes.MatchRenderer($("#main_board"))
             renderer.render(data)
-            this.post_status(message, 'server')
+            this.post_status('board changed: ' + message, 'server')
             if App.match.state == 'playing' && App.match.mode == 'play' && currently_playing_id == $("#main_board").data('this_player_id')
               this.setup_stone_handlers()
           else

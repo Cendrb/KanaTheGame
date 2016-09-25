@@ -16,8 +16,8 @@ class MatchChannel < ApplicationCable::Channel
     else
       send_mode(:spectate)
     end
-    puts "STATE OF THI MATCH IS: #{match.state}"
-    send_state(match.state)
+    puts "STATE OF THIS MATCH IS: #{match.state}"
+    send_state()
     send_current_match_status('render successful', user.current_match_signup.player.id)
   end
 
@@ -57,9 +57,6 @@ class MatchChannel < ApplicationCable::Channel
       else
         match.currently_playing = Player.joins(:match_signups).order('priority').where('match_signups.match_id = ?', match.id).first
       end
-      # TODO we somehow fail to save the currently_playing_id - it stays the same
-
-      puts "player signup id: #{match_signup.player_id} match currently playing id: #{match.currently_playing_id}"
 
       match.save!
       match_signup.save!
@@ -70,7 +67,7 @@ class MatchChannel < ApplicationCable::Channel
   end
 
   def refresh
-    send_current_match_status('render successful')
+    send_current_match_status('refresh successful')
   end
 
   def repopulate
@@ -104,28 +101,17 @@ class MatchChannel < ApplicationCable::Channel
   private
   def send_current_match_status(message = '', target = -1)
     match = current_user_connected.current_match
-    ActionCable.server.broadcast "match_" + match.id.to_s,
-                                 board_data: BoardMatch.dump(match.board_data),
-                                 mode: 'board_render',
-                                 signups: match.match_signups.to_json,
-                                 message: message,
-                                 currently_playing: match.currently_playing.id,
-                                 target: target
+    MatchBroadcaster.send_board_data(match, message, target)
   end
 
   private
   def send_mode(mode)
     match = current_user_connected.current_match
-    ActionCable.server.broadcast "match_" + match.id.to_s,
-                                 mode: 'set_mode',
-                                 player_mode: mode,
-                                 user_id: current_user_connected.id
+    MatchBroadcaster.send_mode(match, current_user_connected, mode)
   end
 
-  def send_state(state)
+  def send_state
     match = current_user_connected.current_match
-    ActionCable.server.broadcast "match_" + match.id.to_s,
-                                 mode: 'set_state',
-                                 state: state
+    MatchBroadcaster.send_state(match)
   end
 end

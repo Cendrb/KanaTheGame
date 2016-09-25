@@ -32,7 +32,8 @@ class Match < ApplicationRecord
       if self.match_signups.count >= self.players_count
         self.state = :playing
         self.save!
-        # TODO broadcast state change
+        BroadcastMatchStateChangeJob.perform_later(self)
+        BroadcastMatchBoardChangeJob.perform_later(self, 'reached the required number of players to play')
       end
     else
       raise 'We are already part of this match!!!'
