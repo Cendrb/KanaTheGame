@@ -18,7 +18,7 @@ class MatchChannel < ApplicationCable::Channel
     end
     puts "STATE OF THIS MATCH IS: #{match.state}"
     send_state()
-    send_current_match_status('render successful', user.current_match_signup.player.id)
+    send_current_match_status('render successful', user)
   end
 
   def unsubscribed
@@ -62,12 +62,13 @@ class MatchChannel < ApplicationCable::Channel
       match_signup.save!
       send_current_match_status(status)
     else
-      send_current_match_status(status, current_user_connected.current_match_signup.player.id)
+      send_current_match_status(status, current_user_connected)
     end
   end
 
   def refresh
-    send_current_match_status('refresh successful')
+    # refresh board only for the request sender
+    send_current_match_status('refresh successful', current_user_connected)
   end
 
   def repopulate
@@ -99,9 +100,11 @@ class MatchChannel < ApplicationCable::Channel
   end
 
   private
-  def send_current_match_status(message = '', target = -1)
+  # @param [String] message
+  # @param [User] target_user
+  def send_current_match_status(message = '', target_user = nil)
     match = current_user_connected.current_match
-    MatchBroadcaster.send_board_data(match, message, target)
+    MatchBroadcaster.send_board_data(match, message, target_user)
   end
 
   private

@@ -17,11 +17,11 @@ $ ->
             this.post_status('CURRENT STATE: ' + data['state'], 'server')
             $('#state').text(data['state'])
           when 'set_mode'
-            if $("#main_board").data('current_user_id') == data['user_id']
+            if $("#main_board").data('current_user_id') == data['target_user_id']
               App.match.mode = data['player_mode']
               $('#mode').text(data['player_mode'])
           when 'board_render'
-            this.render_board(JSON.parse(data['board_data']), JSON.parse(data['signups']), data['message'], data['currently_playing'], data['target'])
+            this.render_board(JSON.parse(data['board_data']), JSON.parse(data['signups']), data['message'], data['currently_playing'], data['target_user_id'])
           else alert 'unknown action received: ' + data['mode']
 
       play: (sourceX, sourceY, targetX, targetY) ->
@@ -41,7 +41,7 @@ $ ->
 
       render_board: (data, signups, message, currently_playing_id, target) ->
         # target = -1 => information for everyone, otherwise player id
-        if target == -1 || target == $("#main_board").data('this_player_id')
+        if target == -1 || target == $("#main_board").data('current_user_id')
           if App.players.ready()
             currently_playing_bar = $("#currently_playing_bar")
             currently_playing_bar.empty()
