@@ -1,8 +1,10 @@
 <h1>Welcome#matchmaking</h1>
+<% user_is_playing = current_user.is_playing? %>
 <%= @match.inspect %>
 <div id="player_info">
   <p>you are <span id="this_player" class="data_span">connecting to action cable...</span></p>
-  <p>your (<%= current_user.nickname %>'s) role in this match is to <span id="mode" class="data_span">connecting to action cable...</span></p>
+  <p>your (<%= current_user.nickname %>'s) role in this match is to
+    <span id="mode" class="data_span">connecting to action cable...</span></p>
   <p>current state of the match is <span id="state" class="data_span">connecting to action cable...</span></p>
 </div>
 <div id="currently_playing_bar">nobody shall play!!</div>
@@ -12,3 +14,8 @@
 <div id="repopulate_board">
   REPOPULATE BOARD! (wipes all existing stones)
 </div>
+<% if user_is_playing %>
+    <%= button_to 'Surrender', leave_match_path, remote: true, data: {confirmation: 'Are you sure you want to surrender?'} %>
+<% else %>
+    <%= button_to 'Leave', leave_match_path %>
+<% end %>

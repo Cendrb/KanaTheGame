@@ -29,14 +29,31 @@ class Match < ApplicationRecord
       signup.save!
       user.current_match = self
       user.save!
-      if self.match_signups.count >= self.players_count
-        self.state = :playing
-        self.save!
-        BroadcastMatchStateChangeJob.perform_later(self)
-        BroadcastMatchBoardChangeJob.perform_later(self, 'reached the required number of players to play')
-      end
+      test_for_play_conditions
     else
       raise 'We are already part of this match!!!'
+    end
+  end
+
+  private
+  def test_for_play_conditions
+    if self.match_signups.count >= self.players_count
+      self.state = :playing
+      self.save!
+      BroadcastMatchStateChangeJob.perform_later(self)
+      BroadcastMatchBoardChangeJob.perform_later(self, 'reached the required number of players to play')
+    end
+  end
+
+  public
+  def test_for_finish_conditions
+    if self.playing?
+      if match_signups.where(lost: false).count <= 1
+        self.state = :finished
+        self.finished_on = Date.today
+        self.save!
+        BroadcastMatchStateChangeJob.perform_later(self)
+      end
     end
   end
 end

@@ -1,6 +1,6 @@
 class MatchmakingController < ApplicationController
   before_action :authenticate_registered
-  before_action :no_current_match, except: :match
+  before_action :no_current_match, except: [:match, :leave]
 
   def welcome
   end
@@ -71,6 +71,29 @@ class MatchmakingController < ApplicationController
       match.signup_user(current_user)
     end
     redirect_to match_path(match)
+  end
+
+  def leave
+    # for both spectating and playing in match
+    user = current_user
+    if user.is_playing?
+      # playing
+      match = user.current_match
+      match_signup = user.current_match_signup
+      if match.playing?
+        match_signup.lost = true
+        match_signup.save!
+        match.test_for_finish_conditions
+        render nothing: true
+      else
+        render plain: 'You can surrender only when the match is in progress'
+      end
+    else
+      # spectating
+      user.current_match = nil
+      user.save!
+      redirect_to :root
+    end
   end
 
   private

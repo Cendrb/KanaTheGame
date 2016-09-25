@@ -14,6 +14,8 @@ Rails.application.routes.draw do
 
   post 'matchmaking/join', as: 'join_match'
 
+  post 'matchmaking/leave', as: 'leave_match'
+
   get 'matches/:id' => 'matchmaking#match', as: 'match'
 
   root to: 'matchmaking#welcome'

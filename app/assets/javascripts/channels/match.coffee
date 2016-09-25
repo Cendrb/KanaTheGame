@@ -42,9 +42,6 @@ $ ->
         this.post_status("requesting board reload", 'client')
         @perform 'refresh'
 
-      give_up: ->
-        @perform 'give_up'
-
       repopulate: ->
         @perform 'repopulate'
 
