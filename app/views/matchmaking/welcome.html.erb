@@ -1,0 +1,23 @@
+<h2>Start new open match</h2>
+<%= form_tag start_open_path do %>
+    <div class="field">
+    <%= label_tag :player_count %><br>
+    <%= number_field_tag :player_count, 2, min: 2, max: 10 %>
+    </div>
+    <div class="field">
+      <%= label_tag :board_width %><br>
+      <%= number_field_tag :board_width, 19, min: 4, max: 40 %>
+    </div>
+    <div class="field">
+      <%= label_tag :board_height %><br>
+      <%= number_field_tag :board_height, 19, min: 4, max: 40 %>
+    </div>
+    <div class="field">
+      <%= label_tag :password %><br>
+      <%= password_field_tag :password %>
+    </div>
+    <%= submit_tag 'Host new match' %>
+<% end %>
+<ul>
+  <li><%= link_to 'Current lobbies', lobby_list_path %></li>
+</ul>

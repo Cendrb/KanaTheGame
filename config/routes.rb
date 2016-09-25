@@ -1,11 +1,23 @@
 Rails.application.routes.draw do
 
-  root to: 'welcome#welcome'
+  get 'matchmaking/welcome'
+
+  get 'matchmaking/lobby_list', as: 'lobby_list'
+
+  post 'matchmaking/ranked_match', as: 'start_ranked'
+
+  post 'matchmaking/friendly_match', as: 'start_friendly'
+
+  post 'matchmaking/open_match', as: 'start_open'
+
+  post 'matchmaking/spectate', as: 'start_spectate'
+
+  post 'matchmaking/join', as: 'join_match'
+
+  get 'matches/:id' => 'matchmaking#match', as: 'match'
+
+  root to: 'matchmaking#welcome'
   mount ActionCable.server => '/cable'
-
-  get 'matchmaking' => 'welcome#matchmaking'
-
-  get 'spectating' => 'welcome#spectating'
 
   get 'administration' => 'welcome#administration'
 

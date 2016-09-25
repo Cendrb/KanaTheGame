@@ -1,0 +1,15 @@
+<h1>Welcome#matchmaking</h1>
+<%= @match.inspect %>
+<% player = current_user.current_match_signup.player %>
+<div id="player_info">
+  <p>ur culur ist <span class="data_span" style="background-color: #666666; color: <%= player.color %>;"><%= player.name %></span></p>
+  <p>you are currently <span id="mode" class="data_span">waiting for players</span> this game as <%= current_user.nickname %></p>
+  <p>current state: <span id="state" class="data_span">waiting for players</span></p>
+</div>
+<div id="currently_playing_bar">nobody shall play!!</div>
+<div id="match_current_points">u have no power here</div>
+<div class="match_board_render" id="main_board" data-this_player_id="<%= player.id %>" data-current_user_id="<%= current_user.id %>"></div>
+<div id="status_bar">no recent messages</div>
+<div id="repopulate_board">
+  REPOPULATE BOARD! (wipes all existing stones)
+</div>

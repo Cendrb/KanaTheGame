@@ -8,12 +8,14 @@ class User < ApplicationRecord
   attr_accessor :password_confirmation
   attr_reader :password
 
-  def current_match
-    return Match.joins(:match_signups).where('started = true AND match_signups.user_id = ?', self.id).first
+  belongs_to :current_match, class_name: 'Match', foreign_key: 'current_match_id', required: false
+
+  def currently_playing_in_match
+    return Match.joins(:match_signups).where('state != ? AND match_signups.user_id = ?', Match.states[:finished], self.id).first
   end
 
   def current_match_signup
-    return MatchSignup.joins(:match).where('matches.started = true AND user_id = ?', self.id).first
+    return MatchSignup.joins(:match).where('matches.state != ? AND user_id = ?', Match.states[:finished], self.id).first
   end
 
   def password=(password)

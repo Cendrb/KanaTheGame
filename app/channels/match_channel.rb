@@ -1,14 +1,24 @@
 # Be sure to restart your server when you modify this file. Action Cable runs in a loop that does not support auto reloading.
 class MatchChannel < ApplicationCable::Channel
   def subscribed
-    Match.find(4).signup_user(current_user)
-    match = current_user.current_match
+    puts local_variables
+    match = current_user_connected.current_match
+    user = current_user_connected
+
+    stream_from "match_" + match.id.to_s
+
+    if user.currently_playing_in_match == match
       if !match.currently_playing
-      match.currently_playing = current_user.current_match_signup.player
-      match.save!
+        match.currently_playing = user.current_match_signup.player
+        match.save!
+      end
+      send_mode(:play)
+    else
+      send_mode(:spectate)
     end
-    stream_from "match_" + current_user.current_match.id.to_s
-    send_current_match_status('render successful', current_user.current_match_signup.player.id)
+    puts "STATE OF THI MATCH IS: #{match.state}"
+    send_state(match.state)
+    send_current_match_status('render successful', user.current_match_signup.player.id)
   end
 
   def unsubscribed
@@ -17,12 +27,18 @@ class MatchChannel < ApplicationCable::Channel
 
   def play(data)
     logger.debug('=======PLAY INVOKED=======')
-    match = current_user.current_match
-    match_signup = current_user.current_match_signup
+    puts current_user_connected.nickname
+    match = current_user_connected.current_match
+    match_signup = current_user_connected.current_match_signup
     source_x = data['sourceX']
     source_y = data['sourceY']
     target_x = data['targetX']
     target_y = data['targetY']
+
+    # rails use CACHE because they don't notice the change from the previous move - this force reloads the match from the database
+    match.reload
+
+    puts "player signup id: #{match_signup.player_id} match currently playing id: #{match.currently_playing_id}"
 
     code, status = match.board_data.perform_move(source_x, source_y, target_x, target_y, match_signup.player_id, match.currently_playing_id)
 
@@ -41,12 +57,15 @@ class MatchChannel < ApplicationCable::Channel
       else
         match.currently_playing = Player.joins(:match_signups).order('priority').where('match_signups.match_id = ?', match.id).first
       end
+      # TODO we somehow fail to save the currently_playing_id - it stays the same
+
+      puts "player signup id: #{match_signup.player_id} match currently playing id: #{match.currently_playing_id}"
 
       match.save!
       match_signup.save!
       send_current_match_status(status)
     else
-      send_current_match_status(status, current_user.current_match_signup.player.id)
+      send_current_match_status(status, current_user_connected.current_match_signup.player.id)
     end
   end
 
@@ -55,10 +74,16 @@ class MatchChannel < ApplicationCable::Channel
   end
 
   def repopulate
-    match = current_user.current_match
-    match.board_data.repopulate([1, 2])
-    match.save!
-    send_current_match_status('repopulation done')
+    match = current_user_connected.current_match
+    puts match.state
+    if !match.waiting?
+      match.board_data.repopulate(match.match_signups.pluck(:player_id))
+      match.save!
+      send_current_match_status('repopulation done')
+    else
+      send_current_match_status('cannot repopulate without all players present')
+    end
+
   end
 
   def give_up
@@ -72,18 +97,35 @@ class MatchChannel < ApplicationCable::Channel
                                                                         {x: 3, y: 3, player_id: 3},
                                                                         {x: 0, y: 3, player_id: 2}]}.to_json)
     match.started = true
-    ActionCable.server.broadcast "match_" + current_user.match.id.to_s, board_data: BoardMatch.dump(match.board_data), mode: 'board_render'
+    ActionCable.server.broadcast "match_" + current_user_connected.match.id.to_s, board_data: BoardMatch.dump(match.board_data), mode: 'board_render'
 =end
   end
 
   private
   def send_current_match_status(message = '', target = -1)
-    match = current_user.current_match
+    match = current_user_connected.current_match
     ActionCable.server.broadcast "match_" + match.id.to_s,
                                  board_data: BoardMatch.dump(match.board_data),
-                                 mode: 'board_render', signups: match.match_signups.to_json,
+                                 mode: 'board_render',
+                                 signups: match.match_signups.to_json,
                                  message: message,
                                  currently_playing: match.currently_playing.id,
                                  target: target
+  end
+
+  private
+  def send_mode(mode)
+    match = current_user_connected.current_match
+    ActionCable.server.broadcast "match_" + match.id.to_s,
+                                 mode: 'set_mode',
+                                 player_mode: mode,
+                                 user_id: current_user_connected.id
+  end
+
+  def send_state(state)
+    match = current_user_connected.current_match
+    ActionCable.server.broadcast "match_" + match.id.to_s,
+                                 mode: 'set_state',
+                                 state: state
   end
 end

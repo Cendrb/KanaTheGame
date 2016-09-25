@@ -24,24 +24,22 @@ class ApplicationController < ActionController::Base
   def authenticate_admin
     authenticate_for_level(User.al_admin)
   end
+
   def authenticate_superuser
     authenticate_for_level(User.al_superuser)
   end
+
   def authenticate_registered
     authenticate_for_level(User.al_registered)
   end
 
   def current_user
     begin
-      if !session[:user_id].nil?
-        User.find(session[:user_id])
-      else if !cookies.signed[:user_id].nil?
-             User.find(cookies.signed[:user_id])
-           end
+      if !cookies.signed[:user_id].nil?
+        User.find(cookies.signed[:user_id])
       end
     rescue Exception => e
       cookies.delete :user_id
-      session[:user_id] = nil
       puts "Exception rescued! (#{e.message})"
     end
   end

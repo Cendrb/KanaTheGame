@@ -73,7 +73,9 @@ class BoardMatch < Board
       remove_all_stones
     end
     randomizer = Random.new
-    total_stones = (width * height) / 5
+    puts "WIDTH: #{@width} (#{@width.class})"
+    puts "HEIGHT: #{@height} (#{@height.class})"
+    total_stones = (@width * @height) / 5
     stones_per_player = total_stones / player_ids.count
     player_ids.each do |player_id|
       stones_per_player.times do
@@ -93,8 +95,8 @@ class BoardMatch < Board
     unless json.nil?
       attrs = JSON.parse(json)
       obj = self.new
-      obj.width = attrs['width']
-      obj.height = attrs['height']
+      obj.width = attrs['width'].to_i
+      obj.height = attrs['height'].to_i
       attrs['stones'].each do |stone|
         obj.set_stone_at(stone['x'], stone['y'], stone['player_id'])
       end

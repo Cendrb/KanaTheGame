@@ -48,9 +48,13 @@ App.shapes.MatchRenderer = class MatchRenderer
     stone.className = 'stone match_stone'
     stone.style.top = y * 50 + 'px'
     stone.style.left = x * 50 + 'px'
+
+    # sets player_id and stone coords to data-properties
     stone.dataset.x = x
     stone.dataset.y = y
     stone.dataset.player_id = player_id
+
+    # render colors and player names
     player = App.players.find_by_id(player_id)
     stone.innerHTML = player.name
     stone.style.backgroundColor = player.color
