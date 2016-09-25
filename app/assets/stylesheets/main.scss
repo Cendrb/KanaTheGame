@@ -27,3 +27,9 @@
   background-color: #730E15;
   height: 60px;
 }
+
+div {
+  &.field, &.actions {
+    margin-bottom: 10px;
+  }
+}

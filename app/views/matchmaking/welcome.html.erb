@@ -1,8 +1,8 @@
 <h2>Start new open match</h2>
-<%= form_tag start_open_path, html:{ autocomplete: 'off' } do %>
+<%= form_tag start_open_path, html: {autocomplete: 'off'} do %>
     <div class="field">
-    <%= label_tag :player_count %><br>
-    <%= number_field_tag :player_count, 2, min: 2, max: 10 %>
+      <%= label_tag :player_count %><br>
+      <%= number_field_tag :player_count, 2, min: 2, max: 10 %>
     </div>
     <div class="field">
       <%= label_tag :board_width %><br>
@@ -18,6 +18,16 @@
     </div>
     <%= submit_tag 'Host new match' %>
 <% end %>
-<ul>
-  <li><%= link_to 'Current lobbies', lobby_list_path %></li>
-</ul>
+
+<h2>Search for matches</h2>
+<div>
+  <%= form_tag lobby_list_path, {method: 'get', autocomplete: 'off'} do %>
+      <div class="field">
+        <%= label_tag :password, 'Password - not required' %>
+        <%= password_field_tag :password %>
+      </div>
+      <div class="actions">
+        <%= submit_tag 'Search for matches' %>
+      </div>
+  <% end %>
+</div>
