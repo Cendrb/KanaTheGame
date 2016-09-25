@@ -35,6 +35,18 @@ class Match < ApplicationRecord
     end
   end
 
+  def is_password_protected?
+    return self.password != nil && self.password != ''
+  end
+
+  def authenticate?(password)
+    if is_password_protected?
+      return password == self.password
+    else
+      return true
+    end
+  end
+
   private
   def test_for_play_conditions
     if self.match_signups.count >= self.players_count

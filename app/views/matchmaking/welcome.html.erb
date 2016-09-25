@@ -1,16 +1,16 @@
 <h2>Start new open match</h2>
-<%= form_tag start_open_path do %>
+<%= form_tag start_open_path, html:{ autocomplete: 'off' } do %>
     <div class="field">
     <%= label_tag :player_count %><br>
     <%= number_field_tag :player_count, 2, min: 2, max: 10 %>
     </div>
     <div class="field">
       <%= label_tag :board_width %><br>
-      <%= number_field_tag :board_width, 19, min: 4, max: 40 %>
+      <%= number_field_tag :board_width, 9, min: 4, max: 40 %>
     </div>
     <div class="field">
       <%= label_tag :board_height %><br>
-      <%= number_field_tag :board_height, 19, min: 4, max: 40 %>
+      <%= number_field_tag :board_height, 9, min: 4, max: 40 %>
     </div>
     <div class="field">
       <%= label_tag :password %><br>

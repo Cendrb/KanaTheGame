@@ -1,20 +1,33 @@
 class MatchmakingController < ApplicationController
   before_action :authenticate_registered
   before_action :no_current_match, except: [:match, :leave]
+  before_action :find_match_and_authenticate, only: [:spectate, :join]
 
   def welcome
   end
 
   def lobby_list
     @data = {}
-    @data[:open_matches] = Match.where(state: :waiting, match_type: :open)
-    @data[:spectatable_matches] = Match.where(state: :playing, match_type: :open)
+    @data[:password] = params[:password]
+    if @data[:password].nil?
+      @data[:waiting_matches] = Match.where(state: :waiting, match_type: :open).where('password = \'\' OR password = NULL')
+      @data[:spectatable_matches] = Match.where(state: :playing, match_type: :open).where('password = \'\' OR password = NULL')
+    else
+      @data[:waiting_matches] = Match.where(state: :waiting, match_type: :open, password: @data[:password])
+      @data[:spectatable_matches] = Match.where(state: :playing, match_type: :open, password: @data[:password])
+    end
+
   end
 
   # renders match view, wait/play/spectate
   def match
     @match = Match.find(params[:id])
-    cookies.signed[:match_id] = @match.id
+    if @match == current_user.current_match
+      cookies.signed[:match_id] = @match.id
+      render 'matchmaking/match'
+    else
+      render plain: "You aren't either playing or spectating in this match"
+    end
   end
 
   def ranked_match
@@ -58,19 +71,17 @@ class MatchmakingController < ApplicationController
   end
 
   def spectate
-    match = Match.find(params[:match_id])
     user = current_user
-    user.current_match = match
+    user.current_match = @match
     user.save!
-    redirect_to match_path(match)
+    redirect_to match_path(@match)
   end
 
   def join
-    match = Match.find(params[:match_id])
-    if match.waiting?
-      match.signup_user(current_user)
+    if @match.waiting?
+      @match.signup_user(current_user)
     end
-    redirect_to match_path(match)
+    redirect_to match_path(@match)
   end
 
   def leave
@@ -83,6 +94,8 @@ class MatchmakingController < ApplicationController
       if match.playing?
         match_signup.lost = true
         match_signup.save!
+        user.current_match = nil
+        user.save!
         match.test_for_finish_conditions
         render nothing: true
       else
@@ -101,6 +114,13 @@ class MatchmakingController < ApplicationController
     match = current_user.current_match
     if match && match.state != :finished
       redirect_to match_path(match), notice: 'You need to finish this match first'
+    end
+  end
+
+  def find_match_and_authenticate
+    @match = Match.find(params[:match_id])
+    if !@match.authenticate?(params[:password])
+      render plain: 'Wrong password'
     end
   end
 end

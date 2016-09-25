@@ -1,0 +1,29 @@
+@media (max-width: 978px) {
+  .container
+  {
+    padding: 0;
+    margin: 0;
+  }
+}
+
+.container
+{
+  margin-left: auto;
+  margin-right: auto;
+}
+
+#material_body_content
+{
+  box-shadow: 0 0 10px #bebebe;
+  background-color: #f6f6f6;
+  padding-left: 10px;
+  padding-right: 10px;
+  padding-bottom: 20px;
+  padding-top: 10px;
+}
+
+#material_header
+{
+  background-color: #730E15;
+  height: 60px;
+}
