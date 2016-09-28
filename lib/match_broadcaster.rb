@@ -12,17 +12,18 @@ class MatchBroadcaster
     ActionCable.server.broadcast "match_" + match.id.to_s,
                                  board_data: BoardMatch.dump(match.board_data),
                                  mode: 'board_render',
-                                 signups: match.match_signups.to_json,
                                  message: message,
                                  currently_playing: match.currently_playing.id,
-                                 target_user_id: target
+                                 target_user_id: target,
+                                 signups: match.match_signups.to_json
   end
 
   # @param [Match] match
     def MatchBroadcaster.send_state(match)
       ActionCable.server.broadcast "match_" + match.id.to_s,
                                    mode: 'set_state',
-                                   state: match.state
+                                   state: match.state,
+                                   signups: match.match_signups.to_json
     end
 
   # @param [Match] match

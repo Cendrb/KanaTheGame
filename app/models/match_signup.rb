@@ -10,4 +10,8 @@ class MatchSignup < ApplicationRecord
   def setup_defaults
     self.spent_points  ||= 0
   end
+
+  def as_json(options)
+    return {user_name: user.nickname}.merge(super(options))
+  end
 end

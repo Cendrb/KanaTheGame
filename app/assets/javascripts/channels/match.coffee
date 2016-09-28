@@ -1,5 +1,13 @@
 $ ->
   if $("#main_board").length
+    element_main_board = $("#main_board")
+    element_player_mode = $("#mode")
+    element_match_state = $('#state')
+    element_player_name_and_color = $('#this_player')
+    element_currently_playing = $("#currently_playing")
+    element_points_table = $("#match_current_points")
+    element_status_bar = $("#status_bar")
+
     App.match = App.cable.subscriptions.create "MatchChannel",
       connected: ->
         # Called when the subscription is ready for use on the server
@@ -15,21 +23,24 @@ $ ->
           when 'set_state'
             App.match.state = data['state']
             this.post_status('CURRENT STATE: ' + data['state'], 'server')
-            $('#state').text(data['state'])
+            element_match_state.text(data['state'])
+
+            # update connected users
+            this.update_connected_users(JSON.parse(data['signups']))
+
           when 'set_mode'
-            if $("#main_board").data('current_user_id') == data['target_user_id']
+            if element_main_board.data('current_user_id') == data['target_user_id']
               App.match.mode = data['player_mode']
               App.match.player_id = data['player_id']
-              $('#mode').text(data['player_mode'])
+              element_player_mode.text(data['player_mode'])
 
               App.players.get (players_unused) =>
                 player_object = App.players.find_by_id(data['player_id'])
-                player_span = $('#this_player')
                 if (player_object != null)
-                  player_span.text(player_object.name)
-                  player_span.css('color', player_object.color)
+                  element_player_name_and_color.text(player_object.name)
+                  element_player_name_and_color.css('color', player_object.color)
                 else
-                  player_span.text('just a spectator')
+                  element_player_name_and_color.text('just a spectator')
           when 'board_render'
             this.render_board(JSON.parse(data['board_data']), JSON.parse(data['signups']), data['message'], data['currently_playing'], data['target_user_id'])
           else alert 'unknown action received: ' + data['mode']
@@ -48,13 +59,11 @@ $ ->
 
       render_board: (data, signups, message, currently_playing_id, target) ->
         # target = -1 => information for everyone, otherwise player id
-        if target == -1 || target == $("#main_board").data('current_user_id')
-          if App.players.ready()
-            currently_playing_bar = $("#currently_playing_bar")
-            currently_playing_bar.empty()
-            currently_playing_bar.text("current player: #{App.players.find_by_id(currently_playing_id).name}")
-            points_bar = $("#match_current_points")
-            points_bar.empty()
+        if target == -1 || target == element_main_board.data('current_user_id')
+          App.players.get (players) =>
+            element_currently_playing.empty()
+            element_currently_playing.text("current player: #{App.players.find_by_id(currently_playing_id).name}")
+            element_points_table.empty()
             for signup in signups
               name_element = document.createElement("span")
               name_element.innerHTML = App.players.find_by_id(signup.player_id).name
@@ -63,22 +72,37 @@ $ ->
               player_element = document.createElement("div")
               player_element.appendChild(name_element)
               player_element.appendChild(points_element)
-              points_bar.append(player_element)
-            renderer = new App.shapes.MatchRenderer($("#main_board"))
+              element_points_table.append(player_element)
+            renderer = new App.shapes.MatchRenderer(element_main_board)
             renderer.render(data)
             this.post_status('board changed: ' + message, 'server')
             if App.match.state == 'playing' && App.match.mode == 'play' && currently_playing_id == App.match.player_id
               this.setup_stone_handlers()
-          else
-            App.players.get (players) =>
-              this.render_board(data, signups, message, currently_playing_id, target)
 
       post_status: (status, side) ->
         if status != ""
           current_date = new Date();
           message = "[#{side}] #{status} @#{current_date.getHours()}:#{current_date.getMinutes()}:#{current_date.getSeconds()}"
           console.log(message)
-          $('#status_bar').text(message)
+          element_status_bar.text(message)
+
+      update_connected_users: (signups) ->
+        App.players.get (players) =>
+          connected_players = $("#connected_users")
+          for signup in signups
+            user_name_element = document.createElement("span")
+            user_name_element.innerHTML = signup.user_name
+            as_text_element = document.createElement("span")
+            as_text_element.innerHTML = " playing as "
+            player = App.players.find_by_id(signup.player_id)
+            player_name_element = document.createElement("span")
+            player_name_element.innerHTML = player.name
+            player_name_element.style.color = player.color
+            player_element = document.createElement("div")
+            player_element.appendChild(user_name_element)
+            player_element.appendChild(as_text_element)
+            player_element.appendChild(player_name_element)
+            connected_players.append(player_element)
 
     $("h1").on 'click', (event) ->
       App.match.refresh()
@@ -89,7 +113,7 @@ $ ->
     selected_stone = null
     stone_being_clicked = false
 
-    $("#main_board").on 'click', (event) ->
+    element_main_board.on 'click', (event) ->
       if !stone_being_clicked && selected_stone
         console.log("======CLICKED ON BOARD======")
         # board absolute location
