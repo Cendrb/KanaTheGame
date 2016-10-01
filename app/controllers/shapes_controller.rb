@@ -5,6 +5,11 @@ class ShapesController < ApplicationController
   # GET /shapes.json
   def index
     @shapes = Shape.all
+
+    respond_to do |format|
+      format.html { render 'shapes/index' }
+      format.json { render json: @shapes }
+    end
   end
 
   # GET /shapes/1

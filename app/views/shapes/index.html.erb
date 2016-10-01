@@ -6,7 +6,7 @@
     <div>
       <h2><%= link_to shape.name, edit_shape_path(shape) %></h2>
       <p><%= shape.points %> points</p>
-      <div class="shape_board_render" data-json="<%= BoardShape.dump(shape.board_data) %>"></div>
+      <div class="shape_board_render" data-id="<%= shape.id %>"></div>
     </div>
 <% end %>
 
