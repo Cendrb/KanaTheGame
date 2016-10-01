@@ -36,12 +36,9 @@ App.shapes.MatchRenderer = class MatchRenderer
     @main_element.css('height', board_obj['height'] * App.shapes.MatchRenderer.one_stone_width)
     @main_element.empty()
     stones_obj = board_obj['stones']
-    if App.players.ready()
+    App.players.get (players) =>
       for stone in stones_obj
         this.render_stone(stone['x'], stone['y'], stone['player_id'])
-    else
-      App.players.get (players) =>
-        this.render(board_obj)
 
   render_stone: (x, y, player_id) ->
     stone = document.createElement('div')
