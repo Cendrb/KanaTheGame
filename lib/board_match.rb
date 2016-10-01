@@ -75,7 +75,7 @@ class BoardMatch < Board
     randomizer = Random.new
     puts "WIDTH: #{@width} (#{@width.class})"
     puts "HEIGHT: #{@height} (#{@height.class})"
-    total_stones = (@width * @height) / 5
+    total_stones = (@width * @height) / 3
     stones_per_player = total_stones / player_ids.count
     player_ids.each do |player_id|
       stones_per_player.times do
