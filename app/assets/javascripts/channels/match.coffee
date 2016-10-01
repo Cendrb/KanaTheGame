@@ -4,7 +4,7 @@ $ ->
     element_player_mode = $("#mode")
     element_match_state = $('#state')
     element_player_name_and_color = $('#this_player')
-    element_currently_playing = $("#currently_playing")
+    element_currently_playing = $("#currently_playing_bar")
     element_points_table = $("#match_current_points")
     element_status_bar = $("#status_bar")
 
@@ -89,6 +89,7 @@ $ ->
       update_connected_users: (signups) ->
         App.players.get (players) =>
           connected_players = $("#connected_users")
+          connected_players.empty()
           for signup in signups
             user_name_element = document.createElement("span")
             user_name_element.innerHTML = signup.user_name
