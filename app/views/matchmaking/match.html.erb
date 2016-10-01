@@ -1,5 +1,6 @@
 <h1>Welcome#matchmaking</h1>
 <% user_is_playing = current_user.is_playing? %>
+<p id="notice"><%= notice %></p>
 <%= @match.inspect %>
 <div id="player_info">
   <p>you are <span id="this_player" class="data_span">connecting to action cable...</span></p>
