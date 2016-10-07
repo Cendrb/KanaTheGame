@@ -84,7 +84,7 @@ $ ->
       post_status: (status, side) ->
         if status != ""
           current_date = new Date();
-          message = "[#{side}] #{status} @#{current_date.getHours()}:#{current_date.getMinutes()}:#{current_date.getSeconds()}"
+          message = "[#{side}] #{status} @#{current_date.toLocaleTimeString("cs-cs")}"
           console.log(message)
           element_status_bar.text(message)
 
