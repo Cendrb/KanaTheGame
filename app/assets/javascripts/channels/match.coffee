@@ -36,8 +36,8 @@ $ ->
               App.match.player_id = data['player_id']
               element_player_mode.text(data['player_mode'])
 
-              App.players.get (players_unused) =>
-                player_object = App.players.find_by_id(data['player_id'])
+              App.Players.run_when_ready (players_unused) =>
+                player_object = App.Players.find_by_id(data['player_id'])
                 if (player_object != null)
                   element_player_name_and_color.text(player_object.name)
                   element_player_name_and_color.css('color', player_object.color)
@@ -63,13 +63,13 @@ $ ->
         # target = -1 => information for everyone, otherwise player id
         App.match.currently_playing_player_id = currently_playing_id
         if target == -1 || target == element_main_board.data('current_user_id')
-          App.players.get (players) =>
+          App.Players.run_when_ready (players) =>
             element_currently_playing.empty()
-            element_currently_playing.text("current player: #{App.players.find_by_id(currently_playing_id).name}")
+            element_currently_playing.text("current player: #{App.Players.find_by_id(currently_playing_id).name}")
             element_points_table.empty()
             for signup in signups
               name_element = document.createElement("span")
-              name_element.innerHTML = App.players.find_by_id(signup.player_id).name
+              name_element.innerHTML = App.Players.find_by_id(signup.player_id).name
               points_element = document.createElement("span")
               points_element.innerHTML = " spent: " + signup.spent_points
               player_element = document.createElement("div")
@@ -89,7 +89,7 @@ $ ->
           element_status_bar.text(message)
 
       update_connected_users: (signups) ->
-        App.players.get (players) =>
+        App.Players.run_when_ready (players) =>
           connected_players = $("#connected_users")
           connected_players.empty()
           for signup in signups
@@ -97,7 +97,7 @@ $ ->
             user_name_element.innerHTML = signup.user_name
             as_text_element = document.createElement("span")
             as_text_element.innerHTML = " playing as "
-            player = App.players.find_by_id(signup.player_id)
+            player = App.Players.find_by_id(signup.player_id)
             player_name_element = document.createElement("span")
             player_name_element.innerHTML = player.name
             player_name_element.style.color = player.color

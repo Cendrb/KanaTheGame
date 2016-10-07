@@ -7,6 +7,6 @@ $( document ).ready ->
   $('.shape_board_render').each ->
     shape_div = $(this)
     shape_div.text("downloading shapes...")
-    App.shapes.get (shapes) =>
+    App.shapes.Shapes.run_when_ready (shapes) =>
       shape_div.empty()
       App.shapes.render_shape(shape_div, JSON.parse(App.shapes.find_by_id(shape_div.data("id")).board_data))

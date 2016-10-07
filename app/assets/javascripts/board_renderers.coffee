@@ -37,7 +37,7 @@ App.shapes.MatchRenderer = class MatchRenderer
     this.main_element.css('height', board_obj['height'] * App.shapes.MatchRenderer.one_stone_width)
     this.current_render_revision += 1
     stones_obj = board_obj['stones']
-    App.players.get (players) =>
+    App.Players.run_when_ready (players) =>
       for stone in stones_obj
         previous_stone = this.main_element.find("[data-current_render_revision=#{this.current_render_revision - 1}][data-id=#{stone['id']}]")
         if previous_stone.length > 0
@@ -61,7 +61,7 @@ App.shapes.MatchRenderer = class MatchRenderer
     stone.dataset.current_render_revision = this.current_render_revision
 
     # render colors and player names
-    player = App.players.find_by_id(new_player_id)
+    player = App.Players.find_by_id(new_player_id)
     stone.innerHTML = player.name
     stone.style.backgroundColor = player.color
 
@@ -79,7 +79,7 @@ App.shapes.MatchRenderer = class MatchRenderer
     stone.dataset.current_render_revision = this.current_render_revision
 
     # render colors and player names
-    player = App.players.find_by_id(player_id)
+    player = App.Players.find_by_id(player_id)
     stone.innerHTML = player.name
     stone.style.backgroundColor = player.color
     this.main_element.append(stone)
