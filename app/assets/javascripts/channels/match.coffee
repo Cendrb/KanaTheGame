@@ -31,6 +31,7 @@ $ ->
 
           when 'set_mode'
             if element_main_board.data('current_user_id') == data['target_user_id']
+              this.post_status("setting mode #{data['player_mode']} for user #{data['target_user_id']} playing as #{data['player_id']}", 'server')
               App.match.mode = data['player_mode']
               App.match.player_id = data['player_id']
               element_player_mode.text(data['player_mode'])
@@ -60,6 +61,7 @@ $ ->
 
       render_board: (data, signups, message, currently_playing_id, target) ->
         # target = -1 => information for everyone, otherwise player id
+        App.match.currently_playing_player_id = currently_playing_id
         if target == -1 || target == element_main_board.data('current_user_id')
           App.players.get (players) =>
             element_currently_playing.empty()
@@ -134,18 +136,23 @@ $ ->
       stone_being_clicked = false
 
     App.match.setup_stone_handlers = ->
+      $(".match_stone").off('click')
       $(".match_stone").on 'click', (event) ->
         if !selected_stone
           console.log("======CLICKED ON STONE======")
+          console.log(this)
+          console.log(this.dataset.player_id)
+          console.log(App.match.player_id)
+          console.log(parseInt(this.dataset.player_id) == App.match.player_id)
           stone_being_clicked = true
-          # select only when it's your stone and you are not a spectator
-          if App.match.player_id != -1 && App.match.player_id == $(this).data('player_id')
-            x = $(this).data('x')
-            y = $(this).data('y')
+          # select only when it's your stone and you are not a spectator AND you are the player which is currently playing
+          if App.match.currently_playing_player_id == App.match.player_id && App.match.player_id != -1 && App.match.player_id == parseInt(this.dataset.player_id)
+            x = parseInt(this.dataset.x)
+            y = parseInt(this.dataset.y)
             select_stone(x, y)
 
     select_stone = (x, y) ->
-      $(".match_stone[data-x='" + x + "'][data-y='" + y + "']").css('border', '2px solid red')
+      $(".match_stone[data-x='#{x}'][data-y='#{y}']").css('border', '2px solid red')
       selected_stone = {x: x, y: y}
       console.log("Selecting stone at x = #{x}; y = #{y}...")
 
