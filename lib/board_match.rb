@@ -4,6 +4,7 @@ class BoardMatch < Board
   def initialize
     super()
     @width, @height = 0, 0
+    @last_stone_id_assigned = 0
   end
 
   def perform_move(source_x, source_y, target_x, target_y, sender_player_id, currently_playing_id)
@@ -64,13 +65,14 @@ class BoardMatch < Board
     return mode, 'move successful'
   end
 
-  def set_stone_at(x, y, player_id)
-    _set_stone_at(x, y, StoneMatch.new(player_id))
+  def set_stone_at(id, x, y, player_id)
+    _set_stone_at(x, y, StoneMatch.new(id, player_id))
   end
 
   def repopulate(player_ids, remove_old_stones = true)
     if remove_old_stones
       remove_all_stones
+      @last_stone_id_assigned = 0
     end
     randomizer = Random.new
     puts "WIDTH: #{@width} (#{@width.class})"
@@ -86,7 +88,8 @@ class BoardMatch < Board
           y = randomizer.rand(0..(@height - 1))
           break if !exists_at?(x, y)
         end
-        set_stone_at(x, y, player_id)
+        @last_stone_id_assigned += 1
+        set_stone_at(@last_stone_id_assigned, x, y, player_id)
       end
     end
   end
@@ -98,7 +101,7 @@ class BoardMatch < Board
       obj.width = attrs['width'].to_i
       obj.height = attrs['height'].to_i
       attrs['stones'].each do |stone|
-        obj.set_stone_at(stone['x'], stone['y'], stone['player_id'])
+        obj.set_stone_at(stone['id'], stone['x'], stone['y'], stone['player_id'])
       end
     end
     return obj
@@ -107,7 +110,7 @@ class BoardMatch < Board
   def BoardMatch.dump(obj)
     if obj
       final_array = []
-      obj.each_stone(->(x, y, stone) { final_array << {x: x, y: y, player_id: stone.player_id} })
+      obj.each_stone(->(x, y, stone) { final_array << {id: stone.id, x: x, y: y, player_id: stone.player_id} })
       final_hash = {stones: final_array, width: obj.width, height: obj.height}
       return final_hash.to_json
     end
