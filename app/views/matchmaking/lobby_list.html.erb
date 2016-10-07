@@ -20,7 +20,7 @@
           <div>Board: <%= BoardMatch.dump(match.board_data) %></div>
           <div>Type: <%= match.match_type %></div>
           <div>Current players: <%= match.match_signups.joins(:user).pluck('users.nickname').to_sentence %></div>
-          <%= button_to 'Spectate', spectate_match_path(match_id: match.id) %>
+          <%= button_to 'Spectate', spectate_match_path(match_id: match.id, password: @data[:password]) %>
         </div>
     <% end %>
   </div>
