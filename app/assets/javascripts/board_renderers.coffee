@@ -27,32 +27,59 @@ App.shapes.ShapeRenderer = class ShapeRenderer
 
 App.shapes.MatchRenderer = class MatchRenderer
   @one_stone_width: 55
+  current_render_revision: 0
 
   constructor: (board_div) ->
-    @main_element = board_div
+    this.main_element = board_div
 
   render: (board_obj) ->
-    @main_element.css('width', board_obj['width'] * App.shapes.MatchRenderer.one_stone_width)
-    @main_element.css('height', board_obj['height'] * App.shapes.MatchRenderer.one_stone_width)
-    @main_element.empty()
+    this.main_element.css('width', board_obj['width'] * App.shapes.MatchRenderer.one_stone_width)
+    this.main_element.css('height', board_obj['height'] * App.shapes.MatchRenderer.one_stone_width)
+    this.current_render_revision += 1
     stones_obj = board_obj['stones']
     App.players.get (players) =>
       for stone in stones_obj
-        this.render_stone(stone['x'], stone['y'], stone['player_id'])
+        previous_stone = this.main_element.find("[data-current_render_revision=#{this.current_render_revision - 1}][data-id=#{stone['id']}]")
+        if previous_stone.length > 0
+          this.animate_stone_to(previous_stone[0], stone['x'], stone['y'], stone['player_id'])
+        else
+          this.render_stone(stone['id'], stone['x'], stone['y'], stone['player_id'])
+      stones_to_be_removed = this.main_element.find("[data-current_render_revision=#{this.current_render_revision - 1}]")
+      stones_to_be_removed.css('opacity', 0)
+      setTimeout(() =>
+          stones_to_be_removed.remove()
+        ,1000)
 
-  render_stone: (x, y, player_id) ->
+  animate_stone_to: (stone, new_x, new_y, new_player_id) ->
+    stone.style.top = new_y * 50 + 'px'
+    stone.style.left = new_x * 50 + 'px'
+
+    # sets player_id and stone coords to data-properties
+    stone.dataset.x = new_x
+    stone.dataset.y = new_y
+    stone.dataset.player_id = new_player_id
+    stone.dataset.current_render_revision = this.current_render_revision
+
+    # render colors and player names
+    player = App.players.find_by_id(new_player_id)
+    stone.innerHTML = player.name
+    stone.style.backgroundColor = player.color
+
+  render_stone: (id, x, y, player_id) ->
     stone = document.createElement('div')
     stone.className = 'stone match_stone'
     stone.style.top = y * 50 + 'px'
     stone.style.left = x * 50 + 'px'
 
-    # sets player_id and stone coords to data-properties
+    # sets id, player_id and stone coords to data-properties
+    stone.dataset.id = id
     stone.dataset.x = x
     stone.dataset.y = y
     stone.dataset.player_id = player_id
+    stone.dataset.current_render_revision = this.current_render_revision
 
     # render colors and player names
     player = App.players.find_by_id(player_id)
     stone.innerHTML = player.name
     stone.style.backgroundColor = player.color
-    @main_element.append(stone)
+    this.main_element.append(stone)

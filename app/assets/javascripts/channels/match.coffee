@@ -12,6 +12,7 @@ $ ->
       connected: ->
         # Called when the subscription is ready for use on the server
         this.post_status("connected to ActionCable", 'server')
+        this.renderer = new App.shapes.MatchRenderer(element_main_board)
 
       disconnected: ->
         # Called when the subscription has been terminated by the server
@@ -73,8 +74,7 @@ $ ->
               player_element.appendChild(name_element)
               player_element.appendChild(points_element)
               element_points_table.append(player_element)
-            renderer = new App.shapes.MatchRenderer(element_main_board)
-            renderer.render(data)
+            this.renderer.render(data)
             this.post_status('board changed: ' + message, 'server')
             if App.match.state == 'playing' && App.match.mode == 'play' && currently_playing_id == App.match.player_id
               this.setup_stone_handlers()

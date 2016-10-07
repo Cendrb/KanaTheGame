@@ -5,7 +5,7 @@
 }
 .match_stone
 {
-
+  transition: top 1s ease-in-out, left 1s ease-in-out, background-color 1s ease-in-out, opacity 1s linear;
 }
 #match_current_points
 {
