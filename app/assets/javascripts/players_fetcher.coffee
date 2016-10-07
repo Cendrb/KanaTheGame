@@ -1,13 +1,20 @@
+App.players.currently_loading = false
+App.players.onloaded_callbacks = []
+
 App.players.get = (callback) ->
   if App.players._players
-    if callback
-      callback(App.players._players)
+    callback(App.players._players)
     return App.players._players
   else
-    $.getJSON "/players.json", (data) =>
-      App.players._players = data
-      if callback
-        callback(App.players._players)
+    if App.players.currently_loading
+      App.players.onloaded_callbacks.push(callback)
+    else
+      App.players.currently_loading = true
+      App.players.onloaded_callbacks.push(callback)
+      $.getJSON "/players.json", (data) =>
+        App.players._players = data
+        for onloaded_callback in App.players.onloaded_callbacks
+          onloaded_callback(App.players._players)
 App.players.ready = ->
   if App.players._players
     return true
