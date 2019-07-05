@@ -13,7 +13,6 @@ class BoardMatch < Board
     y_diff = (source_y - target_y)
     x_abs_diff = x_diff.abs
     y_abs_diff = y_diff.abs
-    puts "xDiff = #{x_abs_diff} yDiff = #{y_abs_diff}"
 
     if sender_player_id != currently_playing_id
       return :invalid, 'it is not your turn yet, wait for others to play'
@@ -61,7 +60,6 @@ class BoardMatch < Board
         return :invalid, 'you cannot move other peoples stones'
       end
     end
-    puts "Tried to perform a move, result: #{mode}"
     return mode, 'move successful'
   end
 
@@ -75,8 +73,6 @@ class BoardMatch < Board
       @last_stone_id_assigned = 0
     end
     randomizer = Random.new
-    puts "WIDTH: #{@width} (#{@width.class})"
-    puts "HEIGHT: #{@height} (#{@height.class})"
     total_stones = (@width * @height) / 3
     stones_per_player = total_stones / player_ids.count
     player_ids.each do |player_id|
@@ -92,6 +88,14 @@ class BoardMatch < Board
         set_stone_at(@last_stone_id_assigned, x, y, player_id)
       end
     end
+  end
+
+  def each_spot(proc)
+    (0..(width - 1)).each { |x|
+      (0..(height - 1)).each { |y|
+        proc.call(x, y)
+      }
+    }
   end
 
   def BoardMatch.load(json)
@@ -110,7 +114,7 @@ class BoardMatch < Board
   def BoardMatch.dump(obj)
     if obj
       final_array = []
-      obj.each_stone(->(x, y, stone) { final_array << {id: stone.id, x: x, y: y, player_id: stone.player_id} })
+      obj.each_stone { |x, y, stone| final_array << {id: stone.id, x: x, y: y, player_id: stone.player_id} }
       final_hash = {stones: final_array, width: obj.width, height: obj.height}
       return final_hash.to_json
     end

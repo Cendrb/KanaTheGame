@@ -1,7 +1,6 @@
 # Be sure to restart your server when you modify this file. Action Cable runs in a loop that does not support auto reloading.
 class MatchChannel < ApplicationCable::Channel
   def subscribed
-    puts local_variables
     match = current_user_connected.current_match
     user = current_user_connected
 
@@ -16,7 +15,6 @@ class MatchChannel < ApplicationCable::Channel
     else
       send_mode(:spectate, -1)
     end
-    puts "STATE OF THIS MATCH IS: #{match.state}"
     send_state()
     send_current_match_status('render successful', user)
   end
@@ -27,7 +25,6 @@ class MatchChannel < ApplicationCable::Channel
 
   def play(data)
     logger.debug('=======PLAY INVOKED=======')
-    puts current_user_connected.nickname
     match = current_user_connected.current_match
     match_signup = current_user_connected.current_match_signup
     source_x = data['sourceX']
@@ -58,6 +55,7 @@ class MatchChannel < ApplicationCable::Channel
         match.currently_playing = Player.joins(:match_signups).order('priority').where('match_signups.match_id = ?', match.id).first
       end
 
+      recalculate_fulfilled_shapes(match, current_user_connected.current_match_signup.player_id)
       match.save!
       match_signup.save!
       send_current_match_status(status)
@@ -75,7 +73,6 @@ class MatchChannel < ApplicationCable::Channel
 
   def repopulate
     match = current_user_connected.current_match
-    puts match.state
     if !match.waiting?
       match.board_data.repopulate(match.match_signups.pluck(:player_id))
       match.save!
@@ -87,8 +84,8 @@ class MatchChannel < ApplicationCable::Channel
   end
 
   private
-  # @param [String] message
-  # @param [User] target_user
+# @param [String] message
+# @param [User] target_user
   def send_current_match_status(message = '', target_user = nil)
     match = current_user_connected.current_match
     MatchBroadcaster.send_board_data(match, message, target_user)
@@ -104,4 +101,13 @@ class MatchChannel < ApplicationCable::Channel
     match = current_user_connected.current_match
     MatchBroadcaster.send_state(match)
   end
+
+  def recalculate_fulfilled_shapes(match, player_id)
+    match.fulfilled_shapes.delete(match.fulfilled_shapes.where(traded: false))
+    Shape.all.each do |shape|
+      # this saves the object into DB
+      match.fulfilled_shapes << shape.get_shapes_in_match(match, player_id)
+    end
+  end
+
 end

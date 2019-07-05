@@ -21,7 +21,7 @@ class BoardShape < Board
   def self.dump(obj)
     if obj
       final_array = []
-      obj.each_stone(->(x, y, stone) { final_array << {x: x, y: y, stone_owner_flag: stone.stone_owner_flag} })
+      obj.each_stone{ |x, y, stone| final_array << {x: x, y: y, stone_owner_flag: stone.stone_owner_flag} }
       final_hash = {stones: final_array}
       return final_hash.to_json
     end

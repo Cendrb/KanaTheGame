@@ -4,4 +4,8 @@ class StoneShape
     super()
     @stone_owner_flag = stone_owner_flag
   end
+
+  def ==(other_stone)
+    self.stone_owner_flag == other_stone.stone_owner_flag
+  end
 end

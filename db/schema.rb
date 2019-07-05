@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20160925142421) do
+ActiveRecord::Schema.define(version: 20190705133602) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -19,8 +19,10 @@ ActiveRecord::Schema.define(version: 20160925142421) do
     t.integer  "shape_id"
     t.integer  "match_id"
     t.integer  "player_id"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
+    t.datetime "created_at",                 null: false
+    t.datetime "updated_at",                 null: false
+    t.text     "board_data"
+    t.boolean  "traded",     default: false, null: false
   end
 
   create_table "match_signups", force: :cascade do |t|
