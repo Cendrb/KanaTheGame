@@ -31,6 +31,9 @@ App.shapes.MatchRenderer = class MatchRenderer
 
   constructor: (board_div) ->
     this.main_element = board_div
+    this.svg_element = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+    this.svg_element.setAttribute('class', 'board_svg')
+    this.main_element.append(this.svg_element)
 
   render: (board_obj, fulfilled_shapes_obj) ->
     this.main_element.css('width', board_obj['width'] * App.shapes.MatchRenderer.one_stone_width)
@@ -47,7 +50,8 @@ App.shapes.MatchRenderer = class MatchRenderer
 
       for fulfilled_shape in fulfilled_shapes_obj
         console.log(fulfilled_shape)
-        this.render_fulfilled_shape(fulfilled_shape.name, fulfilled_shape.points, fulfilled_shape.player_id, JSON.parse(fulfilled_shape.board_data).stones)
+        if !fulfilled_shape.traded
+          this.render_fulfilled_shape(fulfilled_shape.id, fulfilled_shape.name, fulfilled_shape.points, fulfilled_shape.player_id, JSON.parse(fulfilled_shape.board_data).stones)
 
       previous_render_elements = this.main_element.find("[data-current_render_revision=#{this.current_render_revision - 1}]")
       previous_render_elements.css('opacity', 0)
@@ -89,48 +93,45 @@ App.shapes.MatchRenderer = class MatchRenderer
     stone.style.backgroundColor = player.color
     this.main_element.append(stone)
 
-  render_fulfilled_shape: (name, points, player_id, stones) ->
-    shape = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
-    shape.setAttribute('class', 'fulfilled_shape')
-
-    # set render revision
-    shape.dataset.current_render_revision = this.current_render_revision
-
+  render_fulfilled_shape: (id, name, points, player_id, stones) ->
     # add polygon data
+    polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon')
     
-    points_string = ""
+    polygon.style.stroke = "red"
+    polygon.setAttribute('class', 'fulfilled_shape')
     for stone in stones
-      polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon')
-      polygon.style = "fill: #dd555588"
       this.append_point(
         stone.x * 50,
         stone.y * 50,
-        shape,
         polygon)
       this.append_point(
         (stone.x + 1) * 50,
         stone.y * 50,
-        shape,
         polygon)
       this.append_point(
         (stone.x + 1) * 50,
         (stone.y + 1) * 50,
-        shape,
         polygon)
       this.append_point(
         stone.x * 50,
         (stone.y + 1) * 50,
-        shape,
         polygon)
-      shape.appendChild(polygon)
 
-    # render colors and player names
+    # render colors
     player = App.Players.find_by_id(player_id)
-    polygon.backgroundColor = player.color
-    this.main_element.append(shape)
+    polygon.style.fill = player.color
 
-  append_point: (x, y, svg, parent) ->
-    point = svg.createSVGPoint()
+    # set data
+    polygon.dataset.current_render_revision = this.current_render_revision
+    polygon.dataset.id = id
+    polygon.dataset.player_id = player_id
+    polygon.dataset.points = points
+    polygon.dataset.name = name
+
+    this.svg_element.appendChild(polygon)
+
+  append_point: (x, y, parent) ->
+    point = this.svg_element.createSVGPoint()
     point.x = x
     point.y = y
     parent.points.appendItem(point)

@@ -56,7 +56,7 @@ $ ->
 
       play: (sourceX, sourceY, targetX, targetY) ->
         this.post_status("trying to move from #{sourceX}, #{sourceY} to #{targetX}, #{targetY}", 'client')
-        @perform 'play', sourceX: sourceX, sourceY: sourceY, targetX: targetX, targetY: targetY
+        @perform 'play', { sourceX: sourceX, sourceY: sourceY, targetX: targetX, targetY: targetY }
 
       refresh: ->
         this.post_status("requesting board reload", 'client')
@@ -65,6 +65,9 @@ $ ->
       repopulate: ->
         @perform 'repopulate'
 
+      trade_shape: (fulfilled_shape_id) ->
+        this.post_status("submitting shape #{fulfilled_shape_id} for trade", 'client')
+        @perform 'trade_shape', { id: fulfilled_shape_id }
 
       render_board: (data, fulfilled_shapes, signups, message, currently_playing_id, target) ->
         # target = -1 => information for everyone, otherwise player id
@@ -75,10 +78,14 @@ $ ->
             element_currently_playing.text("current player: #{App.Players.find_by_id(currently_playing_id).name}")
             element_points_table.empty()
             for signup in signups
+              traded_shapes = fulfilled_shapes.filter((s) -> s.traded && s.player_id == signup.player_id)
+              console.log(traded_shapes)
               name_element = document.createElement("span")
               name_element.innerHTML = App.Players.find_by_id(signup.player_id).name
               points_element = document.createElement("span")
-              points_element.innerHTML = " spent: " + signup.spent_points
+              reducer_func = (acc, s) -> acc + s.points
+              points_total = traded_shapes.reduce(reducer_func, 0)
+              points_element.innerHTML = " spent: #{signup.spent_points}, earned: #{points_total} - #{traded_shapes.map((s) -> "#{s.name} (#{s.points})").join(", ")}"
               player_element = document.createElement("div")
               player_element.appendChild(name_element)
               player_element.appendChild(points_element)
@@ -157,6 +164,11 @@ $ ->
             x = parseInt(this.dataset.x)
             y = parseInt(this.dataset.y)
             select_stone(x, y)
+      $(".fulfilled_shape").off('click')
+      $(".fulfilled_shape").on 'click', (event) ->
+        console.log("======CLICKED ON SHAPE======")
+        if App.match.currently_playing_player_id == App.match.player_id && App.match.player_id != -1 && App.match.player_id == parseInt(this.dataset.player_id)
+          App.match.trade_shape(parseInt(this.dataset.id))
 
     select_stone = (x, y) ->
       $(".match_stone[data-x='#{x}'][data-y='#{y}']").css('border', '2px solid red')

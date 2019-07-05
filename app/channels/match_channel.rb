@@ -74,13 +74,37 @@ class MatchChannel < ApplicationCable::Channel
   def repopulate
     match = current_user_connected.current_match
     if !match.waiting?
-      match.board_data.repopulate(match.match_signups.pluck(:player_id))
+      player_ids = match.match_signups.pluck(:player_id)
+      match.board_data.repopulate(player_ids)
+      for player_id in player_ids
+        recalculate_fulfilled_shapes(match, player_id)
+      end
       match.save!
       send_current_match_status('repopulation done')
     else
       send_current_match_status('cannot repopulate without all players present')
     end
+  end
 
+  def trade_shape(data)
+    id = data['id']
+    fulfilled_shape = FulfilledShape.find(id)
+    match = current_user_connected.current_match
+
+    # rails use CACHE because they don't notice the change from the previous move - this force reloads the match from the database
+    match.reload
+
+    fulfilled_shape.traded = true
+    
+    match.board_data.trade_shape(fulfilled_shape)
+
+    fulfilled_shape.save!
+
+    recalculate_fulfilled_shapes(match, current_user_connected.current_match_signup.player_id)
+
+    match.save!
+
+    send_current_match_status("shape #{fulfilled_shape.id} #{fulfilled_shape.shape.name} traded in favor of #{current_user_connected.current_match_signup.player.name} for #{fulfilled_shape.shape.points} points")
   end
 
   private

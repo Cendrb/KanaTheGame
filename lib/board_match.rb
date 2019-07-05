@@ -63,6 +63,12 @@ class BoardMatch < Board
     return mode, 'move successful'
   end
 
+  def trade_shape(fulfilled_shape)
+    fulfilled_shape.board_data.each_stone do |x, y, stone|
+      remove_stone_at x, y
+    end
+  end
+
   def set_stone_at(id, x, y, player_id)
     _set_stone_at(x, y, StoneMatch.new(id, player_id))
   end
