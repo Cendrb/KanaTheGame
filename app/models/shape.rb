@@ -40,7 +40,7 @@ class Shape < ApplicationRecord
       return nil if !mine and stone.player_id == player_id
       return nil if !other_players and stone.player_id != player_id
       return nil if !neutrals and stone.player_id == -1
-      fulfilled_shape.set_stone_at(variant_x + x, variant_y + y, stone.player_id)
+      fulfilled_shape.set_stone_at(stone.id, variant_x + x, variant_y + y, stone.player_id)
     end
     return fulfilled_shape
   end

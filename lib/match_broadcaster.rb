@@ -15,7 +15,8 @@ class MatchBroadcaster
                                  message: message,
                                  currently_playing: match.currently_playing.id,
                                  target_user_id: target,
-                                 signups: match.match_signups.to_json
+                                 signups: match.match_signups.to_json,
+                                 fulfilled_shapes: match.fulfilled_shapes.to_json
   end
 
   # @param [Match] match

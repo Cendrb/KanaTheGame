@@ -32,7 +32,7 @@ App.shapes.MatchRenderer = class MatchRenderer
   constructor: (board_div) ->
     this.main_element = board_div
 
-  render: (board_obj) ->
+  render: (board_obj, fulfilled_shapes_obj) ->
     this.main_element.css('width', board_obj['width'] * App.shapes.MatchRenderer.one_stone_width)
     this.main_element.css('height', board_obj['height'] * App.shapes.MatchRenderer.one_stone_width)
     this.current_render_revision += 1
@@ -44,10 +44,15 @@ App.shapes.MatchRenderer = class MatchRenderer
           this.animate_stone_to(previous_stone[0], stone['x'], stone['y'], stone['player_id'])
         else
           this.render_stone(stone['id'], stone['x'], stone['y'], stone['player_id'])
-      stones_to_be_removed = this.main_element.find("[data-current_render_revision=#{this.current_render_revision - 1}]")
-      stones_to_be_removed.css('opacity', 0)
+
+      for fulfilled_shape in fulfilled_shapes_obj
+        console.log(fulfilled_shape)
+        this.render_fulfilled_shape(fulfilled_shape.name, fulfilled_shape.points, fulfilled_shape.player_id, JSON.parse(fulfilled_shape.board_data).stones)
+
+      previous_render_elements = this.main_element.find("[data-current_render_revision=#{this.current_render_revision - 1}]")
+      previous_render_elements.css('opacity', 0)
       setTimeout(() =>
-          stones_to_be_removed.remove()
+          previous_render_elements.remove()
         ,1000)
 
   animate_stone_to: (stone, new_x, new_y, new_player_id) ->
@@ -83,3 +88,49 @@ App.shapes.MatchRenderer = class MatchRenderer
     stone.innerHTML = player.name
     stone.style.backgroundColor = player.color
     this.main_element.append(stone)
+
+  render_fulfilled_shape: (name, points, player_id, stones) ->
+    shape = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+    shape.setAttribute('class', 'fulfilled_shape')
+
+    # set render revision
+    shape.dataset.current_render_revision = this.current_render_revision
+
+    # add polygon data
+    
+    points_string = ""
+    for stone in stones
+      polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon')
+      polygon.style = "fill: #dd555588"
+      this.append_point(
+        stone.x * 50,
+        stone.y * 50,
+        shape,
+        polygon)
+      this.append_point(
+        (stone.x + 1) * 50,
+        stone.y * 50,
+        shape,
+        polygon)
+      this.append_point(
+        (stone.x + 1) * 50,
+        (stone.y + 1) * 50,
+        shape,
+        polygon)
+      this.append_point(
+        stone.x * 50,
+        (stone.y + 1) * 50,
+        shape,
+        polygon)
+      shape.appendChild(polygon)
+
+    # render colors and player names
+    player = App.Players.find_by_id(player_id)
+    polygon.backgroundColor = player.color
+    this.main_element.append(shape)
+
+  append_point: (x, y, svg, parent) ->
+    point = svg.createSVGPoint()
+    point.x = x
+    point.y = y
+    parent.points.appendItem(point)

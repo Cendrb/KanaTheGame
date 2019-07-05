@@ -44,7 +44,14 @@ $ ->
                 else
                   element_player_name_and_color.text('just a spectator')
           when 'board_render'
-            this.render_board(JSON.parse(data['board_data']), JSON.parse(data['signups']), data['message'], data['currently_playing'], data['target_user_id'])
+            console.log(data)
+            this.render_board(
+              JSON.parse(data['board_data']),
+              JSON.parse(data['fulfilled_shapes']),
+              JSON.parse(data['signups']),
+              data['message'],
+              data['currently_playing'],
+              data['target_user_id'])
           else alert 'unknown action received: ' + data['mode']
 
       play: (sourceX, sourceY, targetX, targetY) ->
@@ -59,7 +66,7 @@ $ ->
         @perform 'repopulate'
 
 
-      render_board: (data, signups, message, currently_playing_id, target) ->
+      render_board: (data, fulfilled_shapes, signups, message, currently_playing_id, target) ->
         # target = -1 => information for everyone, otherwise player id
         App.match.currently_playing_player_id = currently_playing_id
         if target == -1 || target == element_main_board.data('current_user_id')
@@ -76,7 +83,7 @@ $ ->
               player_element.appendChild(name_element)
               player_element.appendChild(points_element)
               element_points_table.append(player_element)
-            this.renderer.render(data)
+            this.renderer.render(data, fulfilled_shapes)
             this.post_status('board changed: ' + message, 'server')
             if App.match.state == 'playing' && App.match.mode == 'play' && currently_playing_id == App.match.player_id
               this.setup_stone_handlers()

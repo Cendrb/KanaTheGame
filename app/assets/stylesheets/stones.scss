@@ -10,10 +10,17 @@
 .stone
 {
   position: absolute;
+  z-index: 1;
   margin: 2px;
   width: 44px;
   height: 44px;
   background-color: black;
   color: #bbbbbb;
   text-align: center;
+}
+.fulfilled_shape { 
+  position: absolute;
+  height: 100%;
+  width: 100%;
+  z-index: 0;
 }

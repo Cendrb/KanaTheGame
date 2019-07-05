@@ -103,7 +103,7 @@ class MatchChannel < ApplicationCable::Channel
   end
 
   def recalculate_fulfilled_shapes(match, player_id)
-    match.fulfilled_shapes.delete(match.fulfilled_shapes.where(traded: false))
+    match.fulfilled_shapes.delete(match.fulfilled_shapes.where(traded: false, player_id: player_id))
     Shape.all.each do |shape|
       # this saves the object into DB
       match.fulfilled_shapes << shape.get_shapes_in_match(match, player_id)
