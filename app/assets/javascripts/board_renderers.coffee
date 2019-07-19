@@ -1,3 +1,6 @@
+parseHexColor = (color) ->
+  return [parseInt(color[1..2], 16), parseInt(color[3..4], 16), parseInt(color[5..6], 16)]
+
 App.shapes.ShapeRenderer = class ShapeRenderer
   constructor: (board_div) ->
     @one_field_width = 50
@@ -34,6 +37,8 @@ App.shapes.MatchRenderer = class MatchRenderer extends ShapeRenderer
     @grid_rendered = false
     @main_svg = main_svg
     @main_svg.setAttribute 'class', 'rendered_board'
+    @gradient_color_averagizer_1 = 300
+    @gradient_color_averagizer_2 = 200
 
     @defs_element = document.createElementNS('http://www.w3.org/2000/svg', 'defs')
     @main_svg.appendChild(@defs_element)
@@ -121,19 +126,33 @@ App.shapes.MatchRenderer = class MatchRenderer extends ShapeRenderer
 
       gradient.dataset.current_render_revision = @current_render_revision
 
+      [r, g, b] = parseHexColor player.color
+
       stop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop')
       stop1.setAttribute 'offset', '0'
-      stop1.style.stopColor = 'rgb(149, 152, 156)'
+      stop1.style.stopColor = "rgb(
+        #{(@gradient_color_averagizer_1 + r) / 2},
+        #{(@gradient_color_averagizer_1 + g) / 2},
+        #{(@gradient_color_averagizer_1 + b) / 2}
+      )"
       gradient.appendChild stop1
 
       stop2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop')
       stop2.setAttribute 'offset', '0.270588'
-      stop2.style.stopColor = 'rgb(84, 86, 89)'
+      stop2.style.stopColor = "rgb(
+        #{(@gradient_color_averagizer_2 + r) / 2},
+        #{(@gradient_color_averagizer_2 + g) / 2},
+        #{(@gradient_color_averagizer_2 + b) / 2}
+      )"
       gradient.appendChild stop2
 
       stop3 = document.createElementNS('http://www.w3.org/2000/svg', 'stop')
       stop3.setAttribute 'offset', '1'
-      stop3.style.stopColor = player.color #'rgb(19, 21, 22)'
+      stop3.style.stopColor = "rgb(
+        #{r},
+        #{g},
+        #{b}
+      )"
       gradient.appendChild stop3
 
       @defs_element.appendChild gradient
