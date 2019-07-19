@@ -2,6 +2,8 @@ Rails.application.routes.draw do
 
   get 'matchmaking/welcome'
 
+  get 'matchmaking/sample'
+
   get 'matchmaking/lobby_list', as: 'lobby_list'
 
   post 'matchmaking/ranked_match', as: 'start_ranked'

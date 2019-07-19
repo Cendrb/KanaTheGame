@@ -109,6 +109,9 @@ class MatchmakingController < ApplicationController
     end
   end
 
+  def sample
+  end
+
   private
   def no_current_match
     match = current_user.current_match

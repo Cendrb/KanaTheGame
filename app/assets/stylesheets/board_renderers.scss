@@ -1,0 +1,19 @@
+svg.rendered_board {
+  fill: gray;
+
+  .stone {
+    transition: cx 1s ease-in-out, cy 1s ease-in-out, background-color 1s ease-in-out, opacity 1s linear;
+
+    &.selected {
+      stroke: red;
+    }
+  }
+
+  .field {
+    fill: #ffffff;
+  }
+
+  .circle {
+    fill: #ffffff;
+  }
+}

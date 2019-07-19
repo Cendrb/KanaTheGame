@@ -49,8 +49,8 @@ Rails.application.configure do
   # routes, locales, etc. This feature depends on the listen gem.
   # config.file_watcher = ActiveSupport::EventedFileUpdateChecker
 
-  config.action_cable.url = 'ws://moon:3000/cable'
-  config.action_cable.allowed_request_origins = ["https://moon:3000", "http://moon:3000"]
+  config.action_cable.url = 'ws://mewni.asuscomm.com:3000/cable'
+  config.action_cable.allowed_request_origins = ["https://mewni.asuscomm.com:3000", "http://mewni.asuscomm.com:3000"]
 
   config.web_console.whitelisted_ips = '192.168.1.105'
 end

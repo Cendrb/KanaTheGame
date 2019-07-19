@@ -1,6 +1,6 @@
 $ ->
-  if $("#main_board").length
-    element_main_board = $("#main_board")
+  if $("svg#main_board").length
+    element_main_board = $("svg#main_board")
     element_player_mode = $("#mode")
     element_match_state = $('#state')
     element_player_name_and_color = $('#this_player')
@@ -12,7 +12,7 @@ $ ->
       connected: ->
         # Called when the subscription is ready for use on the server
         this.post_status("connected to ActionCable", 'server')
-        this.renderer = new App.shapes.MatchRenderer(element_main_board)
+        this.renderer = new App.shapes.MatchRenderer(element_main_board.get()[0])
 
       disconnected: ->
         # Called when the subscription has been terminated by the server
@@ -133,6 +133,7 @@ $ ->
     element_main_board.on 'click', (event) ->
       if !stone_being_clicked && selected_stone
         console.log("======CLICKED ON BOARD======")
+        
         # board absolute location
         boardAbsoluteX = $(this).offset().left
         boardAbsoluteY = $(this).offset().top
@@ -141,17 +142,28 @@ $ ->
         clickRelativeToBoardX = event.pageX - boardAbsoluteX
         clickRelativeToBoardY = event.pageY - boardAbsoluteY
 
+        transformToLocal = (svg, clientX, clientY) ->
+          point = svg.createSVGPoint()
+          point.x = clientX
+          point.y = clientY
+          return point.matrixTransform svg.getScreenCTM().inverse()
+
+        svg = element_main_board.get()[0]
+        clickRelativeToSVGCanvas = transformToLocal svg, event.clientX, event.clientY
+
+        debugger
+
         # click stone coords
-        xStoneCoord = Math.floor(clickRelativeToBoardX / 50)
-        yStoneCoord = Math.floor(clickRelativeToBoardY / 50)
+        xStoneCoord = Math.floor(clickRelativeToSVGCanvas.x / 50)
+        yStoneCoord = Math.floor(clickRelativeToSVGCanvas.y / 50)
 
         App.match.play(selected_stone.x, selected_stone.y, xStoneCoord, yStoneCoord)
         deselect_stone()
       stone_being_clicked = false
 
     App.match.setup_stone_handlers = ->
-      $(".match_stone").off('click')
-      $(".match_stone").on 'click', (event) ->
+      $(".stone").off('click')
+      $(".stone").on 'click', (event) ->
         if !selected_stone
           console.log("======CLICKED ON STONE======")
           console.log(this)
@@ -171,11 +183,11 @@ $ ->
           App.match.trade_shape(parseInt(this.dataset.id))
 
     select_stone = (x, y) ->
-      $(".match_stone[data-x='#{x}'][data-y='#{y}']").css('border', '2px solid red')
+      $(".stone[data-x='#{x}'][data-y='#{y}']").addClass('selected')
       selected_stone = {x: x, y: y}
       console.log("Selecting stone at x = #{x}; y = #{y}...")
 
     deselect_stone = ->
-      $(".match_stone").css('border', '')
+      $(".stone").removeClass('selected')
       selected_stone = null
       console.log("Deselecting current stone...")

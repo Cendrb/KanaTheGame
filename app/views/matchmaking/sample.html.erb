@@ -1,0 +1,32 @@
+<style>
+  svg.board {
+    width: 100%;
+  }
+</style>
+
+<script>
+  var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+  svg.setAttribute("class", "board")
+  svg.setAttribute("viewBox", "0 0 400 400"); // calculate based on board size
+  console.log(svg);
+
+  var circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle')
+  circle.setAttribute("cx", 50)
+  circle.setAttribute("cy", 50)
+  circle.setAttribute("r", 20)
+  circle.setAttribute("stroke", "black")
+  circle.addEventListener("click", polygonClick)
+  console.log(circle)
+  svg.appendChild(circle);
+
+  document.getElementById('material_body_content').appendChild(svg);
+  function polygonClick(e) {
+    console.log(e.target);
+  }
+</script>
+
+<h2>Sample</h2>
+<svg class="board" viewbox="0 0 400 400"> <!-- canvas size will change dynamically based on board size -->
+  <polygon class="fulfilled_shape" onClick="polygonClick()" style="stroke: red; fill: rgb(0, 0, 0);" points="300 200 350 200 350 250 300 250 350 200 400 200 400 250 350 250 400 200 450 200 450 250 400 250"></polygon>
+  <polygon class="fulfilled_shape" data-current_render_revision="1" data-id="830" data-player_id="1" data-points="14" data-name="Square" style="stroke: red; fill: rgb(0, 0, 0);" points="350 150 400 150 400 200 350 200 400 150 450 150 450 200 400 200 400 200 450 200 450 250 400 250 350 200 400 200 400 250 350 250"></polygon>
+</svg>
