@@ -101,19 +101,17 @@ init flags =
   (Model
       (case parseStateString flags.state of
         Ok state -> state
-        Err error -> Playing)
+        Err error -> error |> Debug.todo)
       (case Decode.decodeValue signupsDecoder flags.signups of
         Ok signups -> signups |> toDictionaryWithKey .playerId
-        Err error -> Dict.empty
-      )
+        Err error -> error |> Decode.errorToString |> Debug.todo)
       (case decodeRole flags.role of
         Ok role -> role
-        Err error -> Spectator)
+        Err error -> error |> Debug.todo)
       ""
       (case Decode.decodeValue boardDecoder flags.board of
         Ok board -> board
-        Err error -> Board 0 0 Dict.empty [] Nothing Nothing
-      )
+        Err error -> error |> Decode.errorToString |> Debug.todo)
     , Cmd.none)
       
 
