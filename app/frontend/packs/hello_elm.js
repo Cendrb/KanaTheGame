@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
           if(data.target_user_id === current_user_id || data.target_user_id === -1) {
             app.ports.boardPort.send({board_data: JSON.parse(data.board_data), fulfilled_shapes: JSON.parse(data.fulfilled_shapes).map(shape => {
               return {...shape, board_data: JSON.parse(shape.board_data)};
-            })});
+            }), currently_playing: data.currently_playing});
           }
           break;
       }

@@ -44,7 +44,8 @@ type alias Board =
     y : Int,
     stones : Dict Int Stone,
     shapes : List Shape,
-    selectedStoneId : Maybe Int
+    selectedStoneId : Maybe Int,
+    currentPlayerId : Maybe Int
   }
 
 type alias Stone =
@@ -276,15 +277,8 @@ renderBoard board signups =
 
 view : Model -> Html Message
 view model = 
-  
-  -- The inline style is being used for example purposes in order to keep this example simple and
-  -- avoid loading additional resources. Use a proper stylesheet when building your own app.
   div[] [
-    h1 []
-     [stateToString model.state |> text],
-    ul [] (Dict.values model.signups |> List.map (\n -> li [ Attributes.css [ Css.color <| toCssColor <| n.color ]  ] [ text n.userName ]) ),
-    p [] [ text model.errorMessage ],
-    p [] [ text <| "you are " ++ renderRole model.role ],
+    div [] [ text model.errorMessage ],
     case model.board of
       Just board ->
         renderBoard board model.signups
@@ -328,6 +322,29 @@ getSelectedStoneId maybeBoard =
     Nothing ->
       Nothing 
 
+isCurrentlyPlaing : Maybe Board -> Int -> Bool
+isCurrentlyPlaing maybeBoard playerId =
+  case maybeBoard of
+    Just board ->
+      case board.currentPlayerId of
+        Just currentPlayerId ->
+          playerId == currentPlayerId
+        Nothing ->
+          False
+    Nothing ->
+      False 
+
+canTouchStone : Model -> Stone -> Bool
+canTouchStone model stone =
+  case model.role of
+    Player playerId ->
+      if stone.playerId == playerId && isCurrentlyPlaing model.board playerId then
+        True
+      else
+        False
+    _ ->
+      False
+
 getStonesDict : Maybe Board -> Dict Int Stone
 getStonesDict maybeBoard =
   case maybeBoard of
@@ -356,10 +373,13 @@ updateToPlayAt model selectedStoneId coords =
   in
     case maybeSelectedStone of
       Just prevSelectedStone ->
+        if canTouchStone model prevSelectedStone then
         (
           {model | board = model.board |> setSelectedStoneId (Nothing)},
           createPlayCommand (prevSelectedStone.x, prevSelectedStone.y) coords
         )
+        else
+          (model, Cmd.none)
       Nothing ->
         ({model | errorMessage = "Selected stone disappeared"}, Cmd.none)
 
@@ -398,7 +418,10 @@ update message model =
         Just selectedStoneId ->
           updateToPlayAt model selectedStoneId (stone.x, stone.y)
         Nothing ->
-          ({model | board = model.board |> setSelectedStoneId (Just stone.id)}, Cmd.none)
+          if canTouchStone model stone then
+            ({model | board = model.board |> setSelectedStoneId (Just stone.id)}, Cmd.none)
+          else
+            (model, Cmd.none)
     FieldClicked coords ->
       case getSelectedStoneId model.board of
         Just selectedStoneId ->
@@ -489,6 +512,7 @@ boardDecoder =
     |> DPipeline.requiredAt [ "board_data", "stones" ] (Decode.list stoneDecoder |> Decode.andThen (\list -> List.map (\n -> (n.id, n)) list |> Dict.fromList |> Decode.succeed))
     |> DPipeline.required "fulfilled_shapes" (Decode.list shapeDecoder)
     |> DPipeline.hardcoded Nothing
+    |> DPipeline.required "currently_playing" (Decode.nullable Decode.int)
 
 decodeBoard : Decode.Value -> Result Decode.Error Board
 decodeBoard data =
