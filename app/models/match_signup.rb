@@ -12,6 +12,6 @@ class MatchSignup < ApplicationRecord
   end
 
   def as_json(options)
-    return {user_name: user.nickname}.merge(super(options))
+    return {user_name: user.nickname, color: player.color}.merge(super(options))
   end
 end

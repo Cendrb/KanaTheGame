@@ -44,7 +44,6 @@ $ ->
                 else
                   element_player_name_and_color.text('just a spectator')
           when 'board_render'
-            console.log(data)
             this.render_board(
               JSON.parse(data['board_data']),
               JSON.parse(data['fulfilled_shapes']),
@@ -79,7 +78,6 @@ $ ->
             element_points_table.empty()
             for signup in signups
               traded_shapes = fulfilled_shapes.filter((s) -> s.traded && s.player_id == signup.player_id)
-              console.log(traded_shapes)
               name_element = document.createElement("span")
               name_element.innerHTML = App.Players.find_by_id(signup.player_id).name
               points_element = document.createElement("span")
@@ -99,7 +97,6 @@ $ ->
         if status != ""
           current_date = new Date();
           message = "[#{side}] #{status} @#{current_date.toLocaleTimeString("cs-cs")}"
-          console.log(message)
           element_status_bar.text(message)
 
       update_connected_users: (signups) ->
@@ -132,8 +129,6 @@ $ ->
 
     element_main_board.on 'click', (event) ->
       if !stone_being_clicked && selected_stone
-        console.log("======CLICKED ON BOARD======")
-        
         # board absolute location
         boardAbsoluteX = $(this).offset().left
         boardAbsoluteY = $(this).offset().top
@@ -151,8 +146,6 @@ $ ->
         svg = element_main_board.get()[0]
         clickRelativeToSVGCanvas = transformToLocal svg, event.clientX, event.clientY
 
-        debugger
-
         # click stone coords
         xStoneCoord = Math.floor(clickRelativeToSVGCanvas.x / 50)
         yStoneCoord = Math.floor(clickRelativeToSVGCanvas.y / 50)
@@ -165,11 +158,6 @@ $ ->
       $(".stone").off('click')
       $(".stone").on 'click', (event) ->
         if !selected_stone
-          console.log("======CLICKED ON STONE======")
-          console.log(this)
-          console.log(this.dataset.player_id)
-          console.log(App.match.player_id)
-          console.log(parseInt(this.dataset.player_id) == App.match.player_id)
           stone_being_clicked = true
           # select only when it's your stone and you are not a spectator AND you are the player which is currently playing
           if App.match.currently_playing_player_id == App.match.player_id && App.match.player_id != -1 && App.match.player_id == parseInt(this.dataset.player_id)
@@ -178,16 +166,13 @@ $ ->
             select_stone(x, y)
       $(".fulfilled_shape").off('click')
       $(".fulfilled_shape").on 'click', (event) ->
-        console.log("======CLICKED ON SHAPE======")
         if App.match.currently_playing_player_id == App.match.player_id && App.match.player_id != -1 && App.match.player_id == parseInt(this.dataset.player_id)
           App.match.trade_shape(parseInt(this.dataset.id))
 
     select_stone = (x, y) ->
       $(".stone[data-x='#{x}'][data-y='#{y}']").addClass('selected')
       selected_stone = {x: x, y: y}
-      console.log("Selecting stone at x = #{x}; y = #{y}...")
 
     deselect_stone = ->
       $(".stone").removeClass('selected')
       selected_stone = null
-      console.log("Deselecting current stone...")
