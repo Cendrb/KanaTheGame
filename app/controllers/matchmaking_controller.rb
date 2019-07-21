@@ -24,7 +24,7 @@ class MatchmakingController < ApplicationController
     @match = Match.find(params[:id])
     if @match == current_user.current_match
       cookies.signed[:match_id] = @match.id
-      render 'matchmaking/match'
+      render 'matchmaking/match', layout: 'match_view'
     else
       render plain: "You aren't either playing or spectating in this match"
     end

@@ -1,11 +1,19 @@
-<h1>Welcome#matchmaking</h1>
 <%= javascript_pack_tag "hello_elm" %>
 <div id="elm-test" data-current_user_id="<%= current_user.id %>">
   Connecting to server...
 </div>
-<% user_is_playing = current_user.is_playing? %>
-<% if user_is_playing %>
-    <%= button_to 'Surrender', leave_match_path, remote: true, data: {confirmation: 'Are you sure you want to surrender?'} %>
-<% else %>
-    <%= button_to 'Leave', leave_match_path %>
-<% end %>
+<div id="user_info">
+  <% user_is_playing = current_user.is_playing? %>
+  <% if user_is_playing %>
+      <%= button_to 'Surrender', leave_match_path, remote: true, data: {confirmation: 'Are you sure you want to surrender?'} %>
+  <% else %>
+      <%= button_to 'Leave', leave_match_path %>
+  <% end %>
+  <% if current_user %>
+    You are logged in as <%= current_user.nickname %>
+    <%= link_to 'logout', logout_path %>
+  <% else %>
+      Pls <%= link_to 'login', login_path %>
+  <% end %>
+</div>
+

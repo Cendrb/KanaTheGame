@@ -164,7 +164,10 @@ renderGridElements x y params =
         ++ (String.fromInt (Tuple.second coords * params.unit + params.offset))
         ++ ") scale(0.86 0.86)"
       ),
-      Svg.Styled.Events.onClick (FieldClicked coords)
+      Svg.Styled.Events.onClick (FieldClicked coords),
+      Svg.Styled.Attributes.css [
+        Css.fill <| Css.rgb 255 255 255
+      ]
     ] []
   ))
   ++ (createCoordinateTuples x y |> List.map (
@@ -172,7 +175,10 @@ renderGridElements x y params =
     [
       Svg.Styled.Attributes.r "5",
       Svg.Styled.Attributes.cx <| String.fromInt (Tuple.first coords * params.unit + params.offset - 3),
-      Svg.Styled.Attributes.cy <| String.fromInt (Tuple.second coords * params.unit + params.offset - 3)
+      Svg.Styled.Attributes.cy <| String.fromInt (Tuple.second coords * params.unit + params.offset - 3),
+      Svg.Styled.Attributes.css [
+        Css.fill <| Css.rgb 255 255 255
+      ]
     ] []
   ))
 
@@ -271,15 +277,18 @@ renderColorTransitions signups =
 renderBoard : Board -> (Dict Int Signup) -> Html Message
 renderBoard board signups =
   let
-      params = BoardParameters
-        50
-        4
+    params = BoardParameters
+      50
+      4
   in
     Svg.Styled.svg [ Svg.Styled.Attributes.viewBox (
       "0 0 "
       ++ String.fromFloat (toFloat (board.x * params.unit + params.offset) - 2.5)
       ++ " "
-      ++ String.fromFloat (toFloat (board.y * params.unit + params.offset) - 2.5)) 
+      ++ String.fromFloat (toFloat (board.y * params.unit + params.offset) - 2.5)),
+      Svg.Styled.Attributes.css [
+        Css.property "flex" "0 0 auto"
+      ]
     ] 
     (
       (renderGridElements board.x board.y params)
@@ -289,12 +298,62 @@ renderBoard board signups =
       ]
     )
 
+defaultBackground : Color
+defaultBackground = Color 181 183 186
+
+getCurrentSignup : Model -> Maybe Signup
+getCurrentSignup model =
+  case model.role of
+    Player currentPlayerId ->
+      model.signups |> Dict.get currentPlayerId
+    Spectator ->
+      model.signups |> Dict.values |> List.reverse |> List.head
+
+getOtherSignup : Model -> Maybe Signup
+getOtherSignup model =
+  case model.role of
+    Player currentPlayerId ->
+      model.signups |> Dict.remove currentPlayerId |> Dict.values |> List.head
+    Spectator ->
+      model.signups |> Dict.values |> List.head
+
+executeIfPresent : (a -> b) -> b -> Maybe a -> b
+executeIfPresent func d source =
+  case source of
+    Just just -> func just
+    Nothing -> d
+
 view : Model -> Html Message
 view model = 
-  div[] [
-    div [] [ text model.errorMessage ],
-    renderBoard model.board model.signups
-  ]
+  let
+    currentSignup = getCurrentSignup model
+    otherSignup = getOtherSignup model
+    playerStyle = \current -> Attributes.css [
+      Css.property "text-align" "center",
+      Css.property "margin" "0.5em",
+      Css.property "font-size" (if current then "4em" else "3em") ]
+  in
+    div [
+      Attributes.css [
+        Css.property "background-image" ("linear-gradient("
+        ++ (currentSignup |> (executeIfPresent .color defaultBackground) |> renderColor)
+        ++ ","
+        ++ (defaultBackground |> renderColor)
+        ++ ","
+        ++ (otherSignup |> (executeIfPresent .color defaultBackground) |> renderColor)
+        ++ ")"),
+        Css.maxWidth <| Css.em 60,
+        Css.height <| Css.pct 100,
+        Css.displayFlex,
+        Css.property "flex-direction" "column",
+        Css.property "justify-content" "space-between"
+      ]
+    ] [
+      --div [] [ text model.errorMessage ],
+      div [ playerStyle (isCurrentlyPlaing model.board <| executeIfPresent .playerId 69 otherSignup) ] [ text <| executeIfPresent .userName "None" otherSignup ],
+      renderBoard model.board model.signups,
+      div [ playerStyle (isCurrentlyPlaing model.board <| executeIfPresent .playerId 69 currentSignup) ] [ text <| executeIfPresent .userName "None" currentSignup ]
+    ]
 
 -- MESSAGE
 
