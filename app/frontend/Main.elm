@@ -1,6 +1,7 @@
 port module Main exposing (..)
 
 import Json.Decode as Decode
+import Json.Encode as Encode
 import Json.Decode.Pipeline as DPipeline
 
 import Browser
@@ -41,8 +42,9 @@ type alias Board =
   {
     x : Int,
     y : Int,
-    stones : List Stone,
-    shapes : List Shape
+    stones : Dict Int Stone,
+    shapes : List Shape,
+    selectedStoneId : Maybe Int
   }
 
 type alias Stone =
@@ -146,7 +148,8 @@ renderGridElements x y params =
         ++ ","
         ++ (String.fromInt (Tuple.second coords * params.unit + params.offset))
         ++ ") scale(0.86 0.86)"
-      )
+      ),
+      Svg.Styled.Events.onClick (FieldClicked coords)
     ] []
   ))
   ++ (createCoordinateTuples x y |> List.map (
@@ -158,8 +161,21 @@ renderGridElements x y params =
     ] []
   ))
 
-renderStones : (List Stone) -> BoardParameters -> List (Svg.Styled.Svg Message)
-renderStones stones params =
+
+getGradientIdentifier : Int -> Bool -> String
+getGradientIdentifier playerId isSelected =
+  "player" ++ String.fromInt playerId ++ "_" ++ if isSelected then "selected" else "regular"
+
+isStoneSelected : Stone -> Maybe Int -> Bool
+isStoneSelected stone selectedStoneId =
+  case selectedStoneId of
+    Just id ->
+      stone.id == id
+    Nothing ->
+      False
+
+renderStones : (List Stone) -> Maybe Int -> BoardParameters -> List (Svg.Styled.Svg Message)
+renderStones stones selectedStoneId params =
   let
     offset = 22
     radius = 20
@@ -176,7 +192,7 @@ renderStones stones params =
             ++ String.fromInt (stone.y * params.unit + offset + params.offset)
             ++ ")"
           ),
-          Svg.Styled.Attributes.fill <| "url(#player_" ++ String.fromInt stone.playerId ++ ")",
+          Svg.Styled.Attributes.fill <| "url(#" ++ (getGradientIdentifier stone.playerId (isStoneSelected stone selectedStoneId))++ ")",
           Svg.Styled.Attributes.css [
             Css.Transitions.transition [
               Css.Transitions.transform3 1000 0 Css.Transitions.easeInOut
@@ -188,29 +204,54 @@ renderStones stones params =
 
 renderColorTransitions : (Dict Int Signup) -> List (Svg.Styled.Svg Message)
 renderColorTransitions signups =
-  signups |> Dict.values |> List.map (
-    \signup ->
-      Svg.Styled.radialGradient [
-        Svg.Styled.Attributes.id ("player" ++ (String.fromInt signup.playerId)),
-        Svg.Styled.Attributes.cx "66%",
-        Svg.Styled.Attributes.cy "66%",
-        Svg.Styled.Attributes.fx "66%",
-        Svg.Styled.Attributes.fy "66%"
-      ] [
-        Svg.Styled.stop [
-          Svg.Styled.Attributes.offset "0",
-          Svg.Styled.Attributes.stopColor <| renderColor <| (averageColors signup.color (Color 300 300 300))
-        ] [],
-        Svg.Styled.stop [
-          Svg.Styled.Attributes.offset "0.270588",
-          Svg.Styled.Attributes.stopColor <| renderColor <| (averageColors signup.color (Color 200 200 200))
-        ] [],
-        Svg.Styled.stop [
-          Svg.Styled.Attributes.offset "1",
-          Svg.Styled.Attributes.stopColor <| renderColor <| signup.color
-        ] []
-      ]
-  )
+  List.concat [
+    signups |> Dict.values |> List.map (
+      \signup ->
+        Svg.Styled.radialGradient [
+          Svg.Styled.Attributes.id (getGradientIdentifier signup.playerId False),
+          Svg.Styled.Attributes.cx "66%",
+          Svg.Styled.Attributes.cy "66%",
+          Svg.Styled.Attributes.fx "66%",
+          Svg.Styled.Attributes.fy "66%"
+        ] [
+          Svg.Styled.stop [
+            Svg.Styled.Attributes.offset "0",
+            Svg.Styled.Attributes.stopColor <| renderColor <| (averageColors signup.color (Color 300 300 300))
+          ] [],
+          Svg.Styled.stop [
+            Svg.Styled.Attributes.offset "0.270588",
+            Svg.Styled.Attributes.stopColor <| renderColor <| (averageColors signup.color (Color 200 200 200))
+          ] [],
+          Svg.Styled.stop [
+            Svg.Styled.Attributes.offset "1",
+            Svg.Styled.Attributes.stopColor <| renderColor <| signup.color
+          ] []
+        ]
+    ),
+    signups |> Dict.values |> List.map (
+      \signup ->
+        Svg.Styled.radialGradient [
+          Svg.Styled.Attributes.id (getGradientIdentifier signup.playerId True),
+          Svg.Styled.Attributes.cx "33%",
+          Svg.Styled.Attributes.cy "33%",
+          Svg.Styled.Attributes.fx "33%",
+          Svg.Styled.Attributes.fy "33%"
+        ] [
+          Svg.Styled.stop [
+            Svg.Styled.Attributes.offset "0",
+            Svg.Styled.Attributes.stopColor <| renderColor <| (averageColors signup.color (Color 300 300 300))
+          ] [],
+          Svg.Styled.stop [
+            Svg.Styled.Attributes.offset "0.270588",
+            Svg.Styled.Attributes.stopColor <| renderColor <| (averageColors signup.color (Color 200 200 200))
+          ] [],
+          Svg.Styled.stop [
+            Svg.Styled.Attributes.offset "1",
+            Svg.Styled.Attributes.stopColor <| renderColor <| signup.color
+          ] []
+        ]
+    )
+  ]
 
 renderBoard : Board -> (Dict Int Signup) -> Html Message
 renderBoard board signups =
@@ -227,7 +268,7 @@ renderBoard board signups =
     ] 
     (
       (renderGridElements board.x board.y params)
-      ++ (renderStones board.stones params)
+      ++ (renderStones (board.stones |> Dict.values) board.selectedStoneId params)
       ++ [
         Svg.Styled.defs [] (renderColorTransitions signups)
       ]
@@ -259,6 +300,7 @@ type Message
   | RoleReceived (Result String Role)
   | BoardReceived (Result Decode.Error Board)
   | StoneClicked Stone
+  | FieldClicked (Int, Int)
 
 -- PORTS
 port statePort : (String -> msg) -> Sub msg
@@ -266,7 +308,60 @@ port signupsPort : (Decode.Value -> msg) -> Sub msg
 port rolePort : (Decode.Value -> msg) -> Sub msg
 port boardPort : (Decode.Value -> msg) -> Sub msg
 
+port playPort : Encode.Value -> Cmd msg
+
 -- UPDATE
+
+setSelectedStoneId : Maybe Int -> Maybe Board -> Maybe Board
+setSelectedStoneId id maybeBoard =
+  case maybeBoard of
+    Just board ->
+      {board | selectedStoneId = id} |> Just
+    Nothing ->
+      maybeBoard
+
+getSelectedStoneId : Maybe Board -> Maybe Int
+getSelectedStoneId maybeBoard =
+  case maybeBoard of
+    Just board ->
+      board.selectedStoneId
+    Nothing ->
+      Nothing 
+
+getStonesDict : Maybe Board -> Dict Int Stone
+getStonesDict maybeBoard =
+  case maybeBoard of
+    Just board ->
+      board.stones
+    Nothing ->
+      Dict.empty
+
+createPlayCommand : (Int, Int) -> (Int, Int) -> Cmd msg
+createPlayCommand from to =
+  Encode.object [
+    ("from", Encode.object [
+      ("x", Encode.int <| Tuple.first from),
+      ("y", Encode.int <| Tuple.second from)
+    ]),
+    ("to", Encode.object [
+      ("x", Encode.int <| Tuple.first to),
+      ("y", Encode.int <| Tuple.second to)
+    ])
+  ] |> playPort
+
+updateToPlayAt : Model -> Int -> (Int, Int) -> (Model, Cmd msg)
+updateToPlayAt model selectedStoneId coords =
+  let
+    maybeSelectedStone = Dict.get selectedStoneId (getStonesDict model.board)
+  in
+    case maybeSelectedStone of
+      Just prevSelectedStone ->
+        (
+          {model | board = model.board |> setSelectedStoneId (Nothing)},
+          createPlayCommand (prevSelectedStone.x, prevSelectedStone.y) coords
+        )
+      Nothing ->
+        ({model | errorMessage = "Selected stone disappeared"}, Cmd.none)
 
 update : Message -> Model -> (Model, Cmd Message)
 update message model =
@@ -299,7 +394,17 @@ update message model =
         Err error ->
           ({model | errorMessage = Decode.errorToString error}, Cmd.none)
     StoneClicked stone ->
-      (model, Cmd.none)
+      case getSelectedStoneId model.board of
+        Just selectedStoneId ->
+          updateToPlayAt model selectedStoneId (stone.x, stone.y)
+        Nothing ->
+          ({model | board = model.board |> setSelectedStoneId (Just stone.id)}, Cmd.none)
+    FieldClicked coords ->
+      case getSelectedStoneId model.board of
+        Just selectedStoneId ->
+          updateToPlayAt model selectedStoneId coords
+        Nothing ->
+          (model, Cmd.none)
 
 -- SUBSCRIPTIONS
 
@@ -381,8 +486,9 @@ boardDecoder =
   Decode.succeed Board
     |> DPipeline.requiredAt [ "board_data", "width" ] Decode.int
     |> DPipeline.requiredAt [ "board_data", "height" ] Decode.int
-    |> DPipeline.requiredAt [ "board_data", "stones" ] (Decode.list stoneDecoder)
+    |> DPipeline.requiredAt [ "board_data", "stones" ] (Decode.list stoneDecoder |> Decode.andThen (\list -> List.map (\n -> (n.id, n)) list |> Dict.fromList |> Decode.succeed))
     |> DPipeline.required "fulfilled_shapes" (Decode.list shapeDecoder)
+    |> DPipeline.hardcoded Nothing
 
 decodeBoard : Decode.Value -> Result Decode.Error Board
 decodeBoard data =

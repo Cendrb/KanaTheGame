@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
     node: target
   });
 
-  createChannel('MatchChannel', {
+  const channel = createChannel('MatchChannel', {
     connected: () => {},
     disconnected: () => {},
     received: (data) => {
@@ -34,19 +34,24 @@ document.addEventListener('DOMContentLoaded', () => {
           break;
         case 'set_mode':
           if(data.target_user_id === current_user_id || data.target_user_id === -1) {
-            app.ports.rolePort.send({role: data.player_mode, user_id: current_user_id});
+            app.ports.rolePort.send({role: data.player_mode, player_id: data.player_id});
           }
           break;
         case 'board_render':
           if(data.target_user_id === current_user_id || data.target_user_id === -1) {
-            console.log();
-            console.log();
             app.ports.boardPort.send({board_data: JSON.parse(data.board_data), fulfilled_shapes: JSON.parse(data.fulfilled_shapes).map(shape => {
               return {...shape, board_data: JSON.parse(shape.board_data)};
             })});
           }
           break;
       }
+    },
+    play: function (data) {
+      return this.perform("play", { sourceX: data.from.x, sourceY: data.from.y, targetX: data.to.x, targetY: data.to.y })
     }
+  });
+
+  app.ports.playPort.subscribe(data => {
+    channel.play(data);
   });
 });
