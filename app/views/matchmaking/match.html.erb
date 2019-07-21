@@ -1,25 +1,9 @@
 <h1>Welcome#matchmaking</h1>
 <%= javascript_pack_tag "hello_elm" %>
-<div id="elm-test" data-current_user_id="<%= current_user.id %>"></div>
+<div id="elm-test" data-current_user_id="<%= current_user.id %>">
+  Connecting to server...
+</div>
 <% user_is_playing = current_user.is_playing? %>
-<p id="notice"><%= notice %></p>
-<!-- 
-<div id="player_info">
-  <p>you are <span id="this_player" class="data_span">connecting to action cable...</span></p>
-  <p>your (<%= current_user.nickname %>'s) role in this match is to
-    <span id="mode" class="data_span">connecting to action cable...</span></p>
-  <p>current state of the match is <span id="state" class="data_span">connecting to action cable...</span></p>
-</div>
-<div id="connected_users"></div>
-<div id="currently_playing_bar">nobody shall play!!</div>
-<div id="match_current_points">u have no power here</div>
-<svg id="main_board" data-current_user_id="<%= current_user.id %>"></svg>
-<div id="status_bar">no recent messages</div>
-<div id="repopulate_board">
-  REPOPULATE BOARD! (wipes all existing stones)
-</div>
--->
-
 <% if user_is_playing %>
     <%= button_to 'Surrender', leave_match_path, remote: true, data: {confirmation: 'Are you sure you want to surrender?'} %>
 <% else %>

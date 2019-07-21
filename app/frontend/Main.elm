@@ -7,6 +7,7 @@ import Json.Decode.Pipeline as DPipeline
 import Browser
 import Dict exposing (Dict)
 import Css
+import Debug
 import Css.Transitions
 import Html.Styled exposing (..)
 import Html.Styled.Attributes as Attributes
@@ -24,18 +25,16 @@ type alias Model =
     signups : Dict Int Signup,
     role : Role,
     errorMessage : String,
-    board : Maybe Board
+    board : Board
   }
 
 type State
-  = Loading
-  | Playing
+  = Playing
   | Waiting
   | Finished
 
 type Role
-  = Waiter -- he's literally waiting for a port message saying the real role
-  | Player Int -- player id
+  = Player Int -- player id
   | Spectator
 
 type alias Board =
@@ -87,30 +86,47 @@ type alias BoardParameters =
     offset : Int
   }
 
+type alias Flags =
+  {
+    state : String,
+    signups : Decode.Value,
+    role : Decode.Value,
+    board : Decode.Value
+  }
+
 -- INIT
 
-init : (Model, Cmd Message)
-init =
+init : Flags -> (Model, Cmd Message)
+init flags =
   (Model
-    Loading
-    Dict.empty
-    Waiter
-    ""
-    Nothing
-  , Cmd.none)
+      (case parseStateString flags.state of
+        Ok state -> state
+        Err error -> Playing)
+      (case Decode.decodeValue signupsDecoder flags.signups of
+        Ok signups -> signups |> toDictionaryWithKey .playerId
+        Err error -> Dict.empty
+      )
+      (case decodeRole flags.role of
+        Ok role -> role
+        Err error -> Spectator)
+      ""
+      (case Decode.decodeValue boardDecoder flags.board of
+        Ok board -> board
+        Err error -> Board 0 0 Dict.empty [] Nothing Nothing
+      )
+    , Cmd.none)
+      
 
 -- VIEW
 
 stateToString s =
   case s of
-    Loading -> "loading"
     Playing -> "playing"
     Waiting -> "waiting"
     Finished -> "finished"
 
 renderRole role =
   case role of
-    Waiter -> "waiting for server"
     Player id -> "playing with ID " ++ String.fromInt id
     Spectator -> "spectating"
 
@@ -279,11 +295,7 @@ view : Model -> Html Message
 view model = 
   div[] [
     div [] [ text model.errorMessage ],
-    case model.board of
-      Just board ->
-        renderBoard board model.signups
-      Nothing ->
-        div [] [ text "No board" ]
+    renderBoard model.board model.signups
   ]
 
 -- MESSAGE
@@ -306,33 +318,22 @@ port playPort : Encode.Value -> Cmd msg
 
 -- UPDATE
 
-setSelectedStoneId : Maybe Int -> Maybe Board -> Maybe Board
-setSelectedStoneId id maybeBoard =
-  case maybeBoard of
-    Just board ->
-      {board | selectedStoneId = id} |> Just
-    Nothing ->
-      maybeBoard
+toDictionaryWithKey : (obj -> comparable) -> List obj -> Dict comparable obj
+toDictionaryWithKey func list =
+  List.map (\n -> (func n, n)) list |> Dict.fromList
 
-getSelectedStoneId : Maybe Board -> Maybe Int
-getSelectedStoneId maybeBoard =
-  case maybeBoard of
-    Just board ->
-      board.selectedStoneId
-    Nothing ->
-      Nothing 
 
-isCurrentlyPlaing : Maybe Board -> Int -> Bool
-isCurrentlyPlaing maybeBoard playerId =
-  case maybeBoard of
-    Just board ->
-      case board.currentPlayerId of
-        Just currentPlayerId ->
-          playerId == currentPlayerId
-        Nothing ->
-          False
+setSelectedStoneId : Maybe Int -> Board -> Board
+setSelectedStoneId id board =
+  {board | selectedStoneId = id}
+
+isCurrentlyPlaing : Board -> Int -> Bool
+isCurrentlyPlaing board playerId =
+  case board.currentPlayerId of
+    Just currentPlayerId ->
+      playerId == currentPlayerId
     Nothing ->
-      False 
+      False
 
 canTouchStone : Model -> Stone -> Bool
 canTouchStone model stone =
@@ -344,14 +345,6 @@ canTouchStone model stone =
         False
     _ ->
       False
-
-getStonesDict : Maybe Board -> Dict Int Stone
-getStonesDict maybeBoard =
-  case maybeBoard of
-    Just board ->
-      board.stones
-    Nothing ->
-      Dict.empty
 
 createPlayCommand : (Int, Int) -> (Int, Int) -> Cmd msg
 createPlayCommand from to =
@@ -369,7 +362,7 @@ createPlayCommand from to =
 updateToPlayAt : Model -> Int -> (Int, Int) -> (Model, Cmd msg)
 updateToPlayAt model selectedStoneId coords =
   let
-    maybeSelectedStone = Dict.get selectedStoneId (getStonesDict model.board)
+    maybeSelectedStone = Dict.get selectedStoneId model.board.stones
   in
     case maybeSelectedStone of
       Just prevSelectedStone ->
@@ -395,10 +388,7 @@ update message model =
     SignupsReceived result ->
       case result of
         Ok data ->
-          let 
-            signupDictionary = List.map (\n -> (n.playerId, n)) data |> Dict.fromList
-          in
-            ({model | signups = signupDictionary}, Cmd.none)
+          ({model | signups = data |> toDictionaryWithKey .playerId}, Cmd.none)
         Err error ->
           ({model | errorMessage = Decode.errorToString error}, Cmd.none)
     RoleReceived result ->
@@ -410,11 +400,11 @@ update message model =
     BoardReceived result ->
       case result of
         Ok data ->
-          ({model | board = Just data}, Cmd.none)
+          ({model | board = data}, Cmd.none)
         Err error ->
           ({model | errorMessage = Decode.errorToString error}, Cmd.none)
     StoneClicked stone ->
-      case getSelectedStoneId model.board of
+      case model.board.selectedStoneId of
         Just selectedStoneId ->
           updateToPlayAt model selectedStoneId (stone.x, stone.y)
         Nothing ->
@@ -423,7 +413,7 @@ update message model =
           else
             (model, Cmd.none)
     FieldClicked coords ->
-      case getSelectedStoneId model.board of
+      case model.board.selectedStoneId of
         Just selectedStoneId ->
           updateToPlayAt model selectedStoneId coords
         Nothing ->
@@ -434,8 +424,6 @@ update message model =
 parseStateString : String -> Result String State
 parseStateString string =
   case string of
-    "loading" ->
-      Ok Loading
     "playing" ->
       Ok Playing
     "waiting" ->
@@ -443,7 +431,7 @@ parseStateString string =
     "finished" ->
       Ok Finished
     _ ->
-      Err <| string ++ " is not a valid match state"
+      Err "Invalid state string"
 
 decodeRole : Decode.Value -> Result String Role
 decodeRole data =
@@ -471,19 +459,13 @@ colorDecoder =
     |> DPipeline.required "g" Decode.int
     |> DPipeline.required "b" Decode.int
 
-signupDecoder : Decode.Decoder Signup
-signupDecoder =
-  Decode.succeed Signup
+signupsDecoder : Decode.Decoder (List Signup)
+signupsDecoder =
+  Decode.list <| (Decode.succeed Signup
     |> DPipeline.required "user_name" Decode.string
     |> DPipeline.required "player_id" Decode.int
     |> DPipeline.required "spent_points" Decode.int
-    |> DPipeline.required "color" colorDecoder
-
-decodeSignups : Decode.Value -> Result Decode.Error (List Signup)
-decodeSignups data =
-  Decode.decodeValue
-    (Decode.list signupDecoder)
-    data
+    |> DPipeline.required "color" colorDecoder)
 
 stoneDecoder : Decode.Decoder Stone
 stoneDecoder =
@@ -494,15 +476,15 @@ stoneDecoder =
     |> DPipeline.required "player_id" Decode.int
 
 
-shapeDecoder : Decode.Decoder Shape
-shapeDecoder =
-  Decode.succeed Shape 
+shapesDecoder : Decode.Decoder (List Shape)
+shapesDecoder =
+  Decode.list <| (Decode.succeed Shape 
     |> DPipeline.required "id" Decode.int
     |> DPipeline.required "player_id" Decode.int
     |> DPipeline.required "name" Decode.string
     |> DPipeline.required "points" Decode.int
     |> DPipeline.required "traded" Decode.bool
-    |> DPipeline.requiredAt [ "board_data", "stones" ] (Decode.list stoneDecoder)
+    |> DPipeline.requiredAt [ "board_data", "stones" ] (Decode.list stoneDecoder))
 
 boardDecoder : Decode.Decoder Board
 boardDecoder =
@@ -510,32 +492,26 @@ boardDecoder =
     |> DPipeline.requiredAt [ "board_data", "width" ] Decode.int
     |> DPipeline.requiredAt [ "board_data", "height" ] Decode.int
     |> DPipeline.requiredAt [ "board_data", "stones" ] (Decode.list stoneDecoder |> Decode.andThen (\list -> List.map (\n -> (n.id, n)) list |> Dict.fromList |> Decode.succeed))
-    |> DPipeline.required "fulfilled_shapes" (Decode.list shapeDecoder)
+    |> DPipeline.required "fulfilled_shapes" shapesDecoder
     |> DPipeline.hardcoded Nothing
     |> DPipeline.required "currently_playing" (Decode.nullable Decode.int)
-
-decodeBoard : Decode.Value -> Result Decode.Error Board
-decodeBoard data =
-  Decode.decodeValue
-    boardDecoder
-    data
 
 subscriptions : Model -> Sub Message
 subscriptions model =
   Sub.batch [
     statePort (parseStateString >> StateReceived), -- function composure
-    signupsPort (decodeSignups >> SignupsReceived), -- decoding a json
+    signupsPort ((Decode.decodeValue signupsDecoder) >> SignupsReceived), -- decoding a json
     rolePort (decodeRole >> RoleReceived),
-    boardPort (decodeBoard >> BoardReceived)
+    boardPort ((Decode.decodeValue boardDecoder) >> BoardReceived)
   ]
 
 -- MAIN
 
-main : Program (Maybe {}) Model Message
+main : Program Flags Model Message
 main =
   Browser.element
     {
-      init = always init,
+      init = init,
       view = view >> Html.Styled.toUnstyled,
       update = update,
       subscriptions = subscriptions
