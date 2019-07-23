@@ -5,6 +5,11 @@
 <div id="user_info">
   <% user_is_playing = current_user.is_playing? %>
   <button id="repopulate_button">Repopulate</button>
+  <% if user_is_playing %>
+      <%= button_to 'Surrender', leave_match_path, remote: true, data: {confirmation: 'Are you sure you want to surrender?'} %>
+  <% else %>
+      <%= button_to 'Leave', leave_match_path %>
+  <% end %>
   <% if current_user %>
     You are logged in as <%= current_user.nickname %>
     <%= link_to 'logout', logout_path %>
