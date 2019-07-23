@@ -233,14 +233,15 @@ renderColorTransitions signups =
           Svg.Styled.Attributes.cx "66%",
           Svg.Styled.Attributes.cy "66%",
           Svg.Styled.Attributes.fx "66%",
-          Svg.Styled.Attributes.fy "66%"
+          Svg.Styled.Attributes.fy "66%",
+          Svg.Styled.Attributes.r "66%"
         ] [
           Svg.Styled.stop [
             Svg.Styled.Attributes.offset "0",
             Svg.Styled.Attributes.stopColor <| renderColor <| (averageColors signup.color (Color 300 300 300))
           ] [],
           Svg.Styled.stop [
-            Svg.Styled.Attributes.offset "0.270588",
+            Svg.Styled.Attributes.offset "0.2",
             Svg.Styled.Attributes.stopColor <| renderColor <| (averageColors signup.color (Color 200 200 200))
           ] [],
           Svg.Styled.stop [
@@ -332,13 +333,22 @@ view model =
       let
         maybeCurrentSignup = getCurrentSignup model
         maybeOtherSignup = getOtherSignup model
-        playerStyle = \current signup -> Attributes.css [
+        playerStyle = \current signup -> [
           Css.property "text-align" "center",
-          Css.margin <| Css.em 0.5,
-          Css.property "font-size" (if current then "5em" else "3em"),
+          Css.property "font-size" (if current then "3.6rem" else "2.2rem"),
           Css.property "font-family" "futuraMediumBT",
-          Css.textShadow4 (Css.px 0) (Css.px 0) (Css.px 3) (toCssColor signup.color),
+          Css.displayFlex,
+          Css.property "align-items" "center",
+          Css.property "justify-content" "space-around",
+          Css.textShadow4 (Css.px 0) (Css.px 0) (Css.rem 0.3) (toCssColor signup.color),
+          Css.height (Css.rem 6),
           Css.color (Css.rgb 255 255 255)]
+        bottomButtonStyle = Attributes.css [
+          Css.property "font-family" "futuraMediumBT",
+          Css.color (Css.rgb 255 255 255),
+          Css.fontSize (Css.rem 2),
+          Css.backgroundColor (Css.rgba 0 0 0 0),
+          Css.property "border" "none"]
       in
         case maybeCurrentSignup of
           Nothing -> div [] [ text "I'm a little clueless on what to do" ]
@@ -350,6 +360,7 @@ view model =
                   Attributes.css [
                     Css.property "background-image" ("linear-gradient("
                     ++ (otherSignup.color |> renderColor)
+                    ++ "5%"
                     ++ ","
                     ++ (defaultBackground |> renderColor)
                     ++ ","
@@ -358,6 +369,7 @@ view model =
                     ++ (defaultBackground |> renderColor)
                     ++ ","
                     ++ (currentSignup.color |> renderColor)
+                    ++ "85%"
                     ++ ")"),
                     Css.maxWidth <| Css.em 60,
                     Css.height <| Css.pct 100,
@@ -366,11 +378,93 @@ view model =
                     Css.property "justify-content" "space-around"
                   ]
                 ] [
-                  div [ playerStyle (otherSignup.playerId |> isCurrentlyPlaing model.board) otherSignup ]
-                    [ otherSignup.userName ++ ": " ++ String.fromInt(calculateEarned model.board.shapes otherSignup.playerId - otherSignup.spentPoints) |> text ],
+                  div [
+                    Attributes.css (
+                      playerStyle (otherSignup.playerId |> isCurrentlyPlaing model.board) otherSignup
+                      ++ [
+                        Css.marginTop (Css.rem 1.5)
+                      ]
+                    )
+                  ]
+                    [
+                      span [] [
+                        otherSignup.userName ++ ": " ++ String.fromInt(calculateEarned model.board.shapes otherSignup.playerId - otherSignup.spentPoints) |> text ]
+                    ]
+                  ,
                   renderBoard model.board model.signups,
-                  div [ playerStyle (currentSignup.playerId |> isCurrentlyPlaing model.board) currentSignup ]
-                    [ currentSignup.userName ++ ": " ++ String.fromInt(calculateEarned model.board.shapes currentSignup.playerId - currentSignup.spentPoints) |> text ]
+                  div [ Attributes.css 
+                    ((playerStyle (currentSignup.playerId |> isCurrentlyPlaing model.board) currentSignup)
+                    ++ [
+                      Css.paddingLeft (Css.rem 1),
+                      Css.paddingRight (Css.rem 1)
+                    ] )
+                  ]
+                    [ 
+                      button [
+                        Attributes.css [
+                            Css.height (Css.rem 9),
+                            Css.backgroundColor (Css.rgba 0 0 0 0),
+                            Css.property "border" "none"
+                          ]
+                      ] [
+                        Svg.Styled.svg [
+                          Svg.Styled.Attributes.viewBox "0 0 600 820",
+                          Svg.Styled.Attributes.css [
+                            Css.height (Css.pct 100)
+                          ]
+                        ] [
+                          Svg.Styled.path [
+                            Svg.Styled.Attributes.fill "white",
+                            Svg.Styled.Attributes.d "M23 0c13,0 24,10 24,23 0,13 -11,23 -24,23 -12,0 -23,-10 -23,-23 0,-13 11,-23 23,-23zm257 0c13,0 23,10 23,23 0,13 -10,23 -23,23 -13,0 -24,-10 -24,-23 0,-13 11,-23 24,-23zm-257 256c13,0 24,10 24,23 0,13 -11,23 -24,23 -12,0 -23,-10 -23,-23 0,-13 11,-23 23,-23zm257 0c13,0 23,10 23,23 0,13 -10,23 -23,23 -13,0 -24,-10 -24,-23 0,-13 11,-23 24,-23zm256 0c13,0 23,10 23,23 0,13 -10,23 -23,23 -13,0 -23,-10 -23,-23 0,-13 10,-23 23,-23zm-513 256c13,0 24,10 24,23 0,13 -11,24 -24,24 -12,0 -23,-11 -23,-24 0,-13 11,-23 23,-23zm257 0c13,0 23,10 23,23 0,13 -10,24 -23,24 -13,0 -24,-11 -24,-24 0,-13 11,-23 24,-23zm256 0c13,0 23,10 23,23 0,13 -10,24 -23,24 -13,0 -23,-11 -23,-24 0,-13 10,-23 23,-23zm-256 256c13,0 23,11 23,24 0,12 -10,23 -23,23 -13,0 -24,-11 -24,-23 0,-13 11,-24 24,-24zm256 0c13,0 23,11 23,24 0,12 -10,23 -23,23 -13,0 -23,-11 -23,-23 0,-13 10,-24 23,-24z"
+                          ] [],
+                          Svg.Styled.path [
+                            Svg.Styled.Attributes.stroke "white",
+                            Svg.Styled.Attributes.strokeWidth "14",
+                            Svg.Styled.Attributes.fill "none",
+                            Svg.Styled.Attributes.d "M536 535l0 256 -256 0 0 -256 -257 0 0 -256 0 -256 257 0 0 256 256 0 0 256zm-24 222c-4,3 -8,7 -11,11l-187 0c-3,-4 -7,-8 -11,-11l0 -187c8,-6 14,-14 17,-23l176 0c2,9 8,18 16,23l0 187zm-198 -455c-5,8 -13,14 -23,17l0 176c14,4 25,15 29,29l176 0c2,-10 8,-18 16,-24l0 -186c-4,-3 -8,-7 -11,-12l-187 0zm-69 210c5,-8 13,-14 23,-17l0 -176c-14,-4 -25,-15 -29,-28l-175 0c-3,9 -9,17 -17,23l0 186c4,3 8,7 11,12l187 0zm-198 -455c4,-3 8,-7 11,-11l187 0c3,5 7,8 11,12l0 186c-8,6 -14,14 -17,23l-175 0c-3,-9 -9,-17 -17,-23l0 -187z"
+                          ] []
+                        ]
+                      ]
+                      ,
+                      span [] [
+                        currentSignup.userName ++ ": " ++ String.fromInt(calculateEarned model.board.shapes currentSignup.playerId - currentSignup.spentPoints) |> text 
+                      ],
+                      button [
+                        Attributes.css [
+                            Css.height (Css.rem 9),
+                            Css.backgroundColor (Css.rgba 0 0 0 0),
+                            Css.property "border" "none"
+                          ]
+                      ]
+                      [
+                        Svg.Styled.svg [
+                          Svg.Styled.Attributes.viewBox "0 0 600 600",
+                          Svg.Styled.Attributes.css [
+                            Css.height (Css.pct 100)
+                          ]
+                        ] [
+                          Svg.Styled.path [
+                            Svg.Styled.Attributes.stroke "white",
+                            Svg.Styled.Attributes.strokeWidth "14",
+                            Svg.Styled.Attributes.fill "none",
+                            Svg.Styled.Attributes.d "M0 583l0 -292 0 -291 253 145 252 146 -252 146 -253 146zm42 -64l0 -228 0 -227 197 114 197 113 -197 114 -197 114z"
+                          ] []
+                        ]
+                      ]
+                    ]
+                  ,
+                  div [
+                    Attributes.css [
+                      Css.displayFlex,
+                      Css.marginBottom (Css.rem 2),
+                      Css.padding (Css.rem 1),
+                      Css.property "align-items" "center",
+                      Css.property "justify-content" "space-around"
+                    ]
+                  ] [
+                    button [ bottomButtonStyle ] [ text "Surrender" ],
+                    button [ bottomButtonStyle ] [ text "Extra moves" ]
+                  ]
                 ]
     _ ->
       div [] [ text model.errorMessage ]
