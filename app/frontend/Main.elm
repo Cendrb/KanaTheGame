@@ -1,5 +1,7 @@
 port module Main exposing (..)
 
+import Color
+
 import Json.Decode as Decode
 import Json.Encode as Encode
 import Json.Decode.Pipeline as DPipeline
@@ -70,14 +72,7 @@ type alias Signup =
     userName : String,
     playerId : Int,
     spentPoints : Int,
-    color : Color
-  }
-
-type alias Color =
-  {
-    r : Int,
-    g : Int,
-    b : Int
+    color : Color.Color
   }
 
 type alias BoardParameters =
@@ -128,14 +123,6 @@ renderRole role =
     Player id -> "playing with ID " ++ String.fromInt id
     Spectator -> "spectating"
 
-renderColor : Color -> String
-renderColor color =
-  "rgb(" ++ String.fromInt color.r ++ "," ++  String.fromInt color.g ++ "," ++  String.fromInt color.b ++ ")"
-
-toCssColor : Color -> Css.Color
-toCssColor color =
-  Css.rgb color.r color.g color.b
-
 createCoordinateTuples : Int -> Int -> List (Int, Int)
 createCoordinateTuples x y = -- non-inclusive on the end
   List.range 0 (x - 1)
@@ -143,13 +130,6 @@ createCoordinateTuples x y = -- non-inclusive on the end
       \xOff -> (List.range 0 (y - 1)) -- add y variants for each x
         |> List.map (\yOff -> (xOff, yOff))
     )
-
-averageColors : Color -> Color -> Color
-averageColors color1 color2 =
-  Color
-    ((color1.r + color2.r) // 2)
-    ((color1.g + color2.g) // 2)
-    ((color1.b + color2.b) // 2)
 
 renderGridElements : Int -> Int -> BoardParameters -> List (Svg.Styled.Svg Message)
 renderGridElements x y params =
@@ -238,15 +218,15 @@ renderColorTransitions signups =
         ] [
           Svg.Styled.stop [
             Svg.Styled.Attributes.offset "0",
-            Svg.Styled.Attributes.stopColor <| renderColor <| (averageColors signup.color (Color 300 300 300))
+            Svg.Styled.Attributes.stopColor <| Color.renderColor <| (Color.averageColors signup.color (Color.fromRgb 300 300 300))
           ] [],
           Svg.Styled.stop [
             Svg.Styled.Attributes.offset "0.2",
-            Svg.Styled.Attributes.stopColor <| renderColor <| (averageColors signup.color (Color 200 200 200))
+            Svg.Styled.Attributes.stopColor <| Color.renderColor <| (Color.averageColors signup.color (Color.fromRgb 200 200 200))
           ] [],
           Svg.Styled.stop [
             Svg.Styled.Attributes.offset "1",
-            Svg.Styled.Attributes.stopColor <| renderColor <| signup.color
+            Svg.Styled.Attributes.stopColor <| Color.renderColor <| signup.color
           ] []
         ]
     ),
@@ -261,15 +241,15 @@ renderColorTransitions signups =
         ] [
           Svg.Styled.stop [
             Svg.Styled.Attributes.offset "0",
-            Svg.Styled.Attributes.stopColor <| renderColor <| (averageColors signup.color (Color 300 300 300))
+            Svg.Styled.Attributes.stopColor <| Color.renderColor <| (Color.averageColors signup.color (Color.fromRgb 300 300 300))
           ] [],
           Svg.Styled.stop [
             Svg.Styled.Attributes.offset "0.270588",
-            Svg.Styled.Attributes.stopColor <| renderColor <| (averageColors signup.color (Color 200 200 200))
+            Svg.Styled.Attributes.stopColor <| Color.renderColor <| (Color.averageColors signup.color (Color.fromRgb 200 200 200))
           ] [],
           Svg.Styled.stop [
             Svg.Styled.Attributes.offset "1",
-            Svg.Styled.Attributes.stopColor <| renderColor <| signup.color
+            Svg.Styled.Attributes.stopColor <| Color.renderColor <| signup.color
           ] []
         ]
     )
@@ -301,8 +281,8 @@ renderBoard board signups =
       ]
     )
 
-defaultBackground : Color
-defaultBackground = Color 181 183 186
+defaultBackground : Color.Color
+defaultBackground = Color.fromRgb 181 183 186
 
 getCurrentSignup : Model -> Maybe Signup
 getCurrentSignup model =
@@ -320,11 +300,21 @@ getOtherSignup model =
     Spectator ->
       model.signups |> Dict.values |> List.head
 
-executeIfPresent : (a -> b) -> b -> Maybe a -> b
-executeIfPresent func d source =
-  case source of
-    Just just -> func just
-    Nothing -> d
+renderMainGradient: Color.Color -> Color.Color -> Color.Color -> String
+renderMainGradient top center bottom =
+  "linear-gradient("
+    ++ (top |> Color.renderColor)
+    ++ "5%"
+    ++ ","
+    ++ (center |> Color.renderColor)
+    ++ ","
+    ++ (center |> Color.renderColor)
+    ++ ","
+    ++ (center |> Color.renderColor)
+    ++ ","
+    ++ (bottom |> Color.renderColor)
+    ++ "85%"
+    ++ ")"
 
 view : Model -> Html Message
 view model =
@@ -340,7 +330,7 @@ view model =
           Css.displayFlex,
           Css.property "align-items" "center",
           Css.property "justify-content" "space-around",
-          Css.textShadow4 (Css.px 0) (Css.px 0) (Css.rem 0.3) (toCssColor signup.color),
+          Css.textShadow4 (Css.px 0) (Css.px 0) (Css.rem 0.3) (Color.toCssColor signup.color),
           Css.height (Css.rem 6),
           Css.color (Css.rgb 255 255 255)]
         bottomButtonStyle = Attributes.css [
@@ -358,19 +348,7 @@ view model =
               Just otherSignup -> 
                 div [
                   Attributes.css [
-                    Css.property "background-image" ("linear-gradient("
-                    ++ (otherSignup.color |> renderColor)
-                    ++ "5%"
-                    ++ ","
-                    ++ (defaultBackground |> renderColor)
-                    ++ ","
-                    ++ (defaultBackground |> renderColor)
-                    ++ ","
-                    ++ (defaultBackground |> renderColor)
-                    ++ ","
-                    ++ (currentSignup.color |> renderColor)
-                    ++ "85%"
-                    ++ ")"),
+                    Css.property "background-image" (renderMainGradient otherSignup.color defaultBackground currentSignup.color),
                     Css.maxWidth <| Css.em 60,
                     Css.height <| Css.pct 100,
                     Css.displayFlex,
@@ -493,7 +471,6 @@ port playPort : Encode.Value -> Cmd msg
 toDictionaryWithKey : (obj -> comparable) -> List obj -> Dict comparable obj
 toDictionaryWithKey func list =
   List.map (\n -> (func n, n)) list |> Dict.fromList
-
 
 setSelectedStoneId : Maybe Int -> Board -> Board
 setSelectedStoneId id board =
@@ -627,21 +604,13 @@ decodeRole data =
     Err error ->
       Err <| Decode.errorToString error
 
-
-colorDecoder : Decode.Decoder Color
-colorDecoder =
-  Decode.succeed Color
-    |> DPipeline.required "r" Decode.int
-    |> DPipeline.required "g" Decode.int
-    |> DPipeline.required "b" Decode.int
-
 signupsDecoder : Decode.Decoder (List Signup)
 signupsDecoder =
   Decode.list <| (Decode.succeed Signup
     |> DPipeline.required "user_name" Decode.string
     |> DPipeline.required "player_id" Decode.int
     |> DPipeline.required "spent_points" Decode.int
-    |> DPipeline.required "color" colorDecoder)
+    |> DPipeline.required "color" Color.colorDecoder)
 
 stoneDecoder : Decode.Decoder Stone
 stoneDecoder =
@@ -650,7 +619,6 @@ stoneDecoder =
     |> DPipeline.required "x" Decode.int
     |> DPipeline.required "y" Decode.int
     |> DPipeline.required "player_id" Decode.int
-
 
 shapesDecoder : Decode.Decoder (List Shape)
 shapesDecoder =
