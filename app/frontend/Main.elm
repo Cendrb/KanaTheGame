@@ -162,7 +162,7 @@ renderGridElements x y params =
         ++ (String.fromInt (Tuple.first coords * params.unit + params.offset))
         ++ ","
         ++ (String.fromInt (Tuple.second coords * params.unit + params.offset))
-        ++ ") scale(0.86 0.86)"
+        ++ ") scale(0.9 0.9)"
       ),
       Svg.Styled.Events.onClick (FieldClicked coords),
       Svg.Styled.Attributes.css [
@@ -173,9 +173,9 @@ renderGridElements x y params =
   ++ (createCoordinateTuples x y |> List.map (
     \coords -> Svg.Styled.circle
     [
-      Svg.Styled.Attributes.r "5",
-      Svg.Styled.Attributes.cx <| String.fromInt (Tuple.first coords * params.unit + params.offset - 3),
-      Svg.Styled.Attributes.cy <| String.fromInt (Tuple.second coords * params.unit + params.offset - 3),
+      Svg.Styled.Attributes.r "4",
+      Svg.Styled.Attributes.cx <| String.fromInt (Tuple.first coords * params.unit + params.offset - 2),
+      Svg.Styled.Attributes.cy <| String.fromInt (Tuple.second coords * params.unit + params.offset - 2),
       Svg.Styled.Attributes.css [
         Css.fill <| Css.rgb 255 255 255
       ]
@@ -208,9 +208,9 @@ renderStones stones selectedStoneId params =
           Svg.Styled.Attributes.r <| String.fromInt radius,
           Svg.Styled.Attributes.transform <| (
             "translate("
-            ++ String.fromInt (stone.x * params.unit + offset + params.offset)
+            ++ String.fromInt (stone.x * params.unit + offset + params.offset + 1)
             ++ ","
-            ++ String.fromInt (stone.y * params.unit + offset + params.offset)
+            ++ String.fromInt (stone.y * params.unit + offset + params.offset + 1)
             ++ ")"
           ),
           Svg.Styled.Attributes.fill <| "url(#" ++ (getGradientIdentifier stone.playerId (isStoneSelected stone selectedStoneId))++ ")",
@@ -279,7 +279,7 @@ renderBoard board signups =
   let
     params = BoardParameters
       50
-      4
+      3
   in
     Svg.Styled.svg [ Svg.Styled.Attributes.viewBox (
       "0 0 "
@@ -324,36 +324,46 @@ executeIfPresent func d source =
     Nothing -> d
 
 view : Model -> Html Message
-view model = 
-  let
-    currentSignup = getCurrentSignup model
-    otherSignup = getOtherSignup model
-    playerStyle = \current -> Attributes.css [
-      Css.property "text-align" "center",
-      Css.property "margin" "0.5em",
-      Css.property "font-size" (if current then "4em" else "3em") ]
-  in
-    div [
-      Attributes.css [
-        Css.property "background-image" ("linear-gradient("
-        ++ (currentSignup |> (executeIfPresent .color defaultBackground) |> renderColor)
-        ++ ","
-        ++ (defaultBackground |> renderColor)
-        ++ ","
-        ++ (otherSignup |> (executeIfPresent .color defaultBackground) |> renderColor)
-        ++ ")"),
-        Css.maxWidth <| Css.em 60,
-        Css.height <| Css.pct 100,
-        Css.displayFlex,
-        Css.property "flex-direction" "column",
-        Css.property "justify-content" "space-between"
-      ]
-    ] [
-      --div [] [ text model.errorMessage ],
-      div [ playerStyle (isCurrentlyPlaing model.board <| executeIfPresent .playerId 69 otherSignup) ] [ text <| executeIfPresent .userName "None" otherSignup ],
-      renderBoard model.board model.signups,
-      div [ playerStyle (isCurrentlyPlaing model.board <| executeIfPresent .playerId 69 currentSignup) ] [ text <| executeIfPresent .userName "None" currentSignup ]
-    ]
+view model =
+  case model.errorMessage of
+    "" ->
+      let
+        currentSignup = getCurrentSignup model
+        otherSignup = getOtherSignup model
+        playerStyle = \current -> Attributes.css [
+          Css.property "text-align" "center",
+          Css.property "margin" "0.5em",
+          Css.property "font-size" (if current then "4em" else "3em") ]
+      in
+        div [
+          Attributes.css [
+            Css.property "background-image" ("linear-gradient("
+            ++ (otherSignup |> (executeIfPresent .color defaultBackground) |> renderColor)
+            ++ ","
+            ++ (defaultBackground |> renderColor)
+            ++ ","
+            ++ (defaultBackground |> renderColor)
+            ++ ","
+            ++ (defaultBackground |> renderColor)
+            ++ ","
+            ++ (defaultBackground |> renderColor)
+            ++ ","
+            ++ (currentSignup |> (executeIfPresent .color defaultBackground) |> renderColor)
+            ++ ")"),
+            Css.maxWidth <| Css.em 60,
+            Css.height <| Css.pct 100,
+            Css.displayFlex,
+            Css.property "flex-direction" "column",
+            Css.property "justify-content" "space-between"
+          ]
+        ] [
+          div [ playerStyle (isCurrentlyPlaing model.board <| executeIfPresent .playerId 69 otherSignup) ] [ text <| executeIfPresent .userName "None" otherSignup ],
+          renderBoard model.board model.signups,
+          div [ playerStyle (isCurrentlyPlaing model.board <| executeIfPresent .playerId 69 currentSignup) ] [ text <| executeIfPresent .userName "None" currentSignup ]
+        ]
+    _ ->
+      div [] [ text model.errorMessage ]
+
 
 -- MESSAGE
 
