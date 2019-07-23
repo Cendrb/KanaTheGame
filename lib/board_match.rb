@@ -79,7 +79,7 @@ class BoardMatch < Board
       @last_stone_id_assigned = 0
     end
     randomizer = Random.new
-    total_stones = (@width * @height) / 3
+    total_stones = (@width * @height) / 2
     stones_per_player = total_stones / player_ids.count
     player_ids.each do |player_id|
       stones_per_player.times do
