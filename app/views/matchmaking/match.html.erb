@@ -9,6 +9,7 @@
   <% else %>
       <%= button_to 'Leave', leave_match_path %>
   <% end %>
+  <button id="repopulate_button">Repopulate</button>
   <% if current_user %>
     You are logged in as <%= current_user.nickname %>
     <%= link_to 'logout', logout_path %>

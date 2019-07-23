@@ -338,9 +338,7 @@ view model =
           Css.property "font-size" (if current then "5em" else "3em"),
           Css.property "font-family" "futuraMediumBT",
           Css.textShadow4 (Css.px 0) (Css.px 0) (Css.px 3) (toCssColor signup.color),
-          Css.color (Css.rgb 255 255 255),
-          Css.property "-webkit-text-stroke" (renderColor signup.color),
-          Css.property "-webkit-test-stroke-width" "3px" ]
+          Css.color (Css.rgb 255 255 255)]
       in
         case maybeCurrentSignup of
           Nothing -> div [] [ text "I'm a little clueless on what to do" ]
@@ -368,9 +366,11 @@ view model =
                     Css.property "justify-content" "space-around"
                   ]
                 ] [
-                  div [ playerStyle (otherSignup.playerId |> isCurrentlyPlaing model.board) otherSignup ] [ otherSignup.userName |> text ],
+                  div [ playerStyle (otherSignup.playerId |> isCurrentlyPlaing model.board) otherSignup ]
+                    [ otherSignup.userName ++ ": " ++ String.fromInt(calculateEarned model.board.shapes otherSignup.playerId - otherSignup.spentPoints) |> text ],
                   renderBoard model.board model.signups,
-                  div [ playerStyle (currentSignup.playerId |> isCurrentlyPlaing model.board) currentSignup ] [ currentSignup.userName |> text ]
+                  div [ playerStyle (currentSignup.playerId |> isCurrentlyPlaing model.board) currentSignup ]
+                    [ currentSignup.userName ++ ": " ++ String.fromInt(calculateEarned model.board.shapes currentSignup.playerId - currentSignup.spentPoints) |> text ]
                 ]
     _ ->
       div [] [ text model.errorMessage ]
@@ -454,6 +454,10 @@ updateToPlayAt model selectedStoneId coords =
       Nothing ->
         ({model | errorMessage = "Selected stone disappeared"}, Cmd.none)
 
+calculateEarned : (List Shape) -> Int -> Int
+calculateEarned shapes playerId =
+  shapes |> List.filter (\shape -> shape.playerId == playerId && shape.traded) |> List.map .points |> List.sum
+
 update : Message -> Model -> (Model, Cmd Message)
 update message model =
   case message of
@@ -466,7 +470,7 @@ update message model =
     SignupsReceived result ->
       case result of
         Ok data ->
-          ({model | signups = data |> toDictionaryWithKey .playerId}, Cmd.none)
+          ({model | signups = data |> toDictionaryWithKey .playerId }, Cmd.none)
         Err error ->
           ({model | errorMessage = Decode.errorToString error}, Cmd.none)
     RoleReceived result ->

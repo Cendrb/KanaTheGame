@@ -26,6 +26,10 @@ document.addEventListener('DOMContentLoaded', () => {
       app.ports.playPort.subscribe(data => {
         channel.play(data);
       });
+
+      document.getElementById("repopulate_button").addEventListener("click", () => {
+        channel.repopulate();
+      });
     }
   };
 
@@ -101,7 +105,10 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     },
     play: function (data) {
-      return this.perform("play", { sourceX: data.from.x, sourceY: data.from.y, targetX: data.to.x, targetY: data.to.y })
+      return this.perform("play", { sourceX: data.from.x, sourceY: data.from.y, targetX: data.to.x, targetY: data.to.y });
+    },
+    repopulate: function (data) {
+      return this.perform("repopulate");
     }
   });
 });
