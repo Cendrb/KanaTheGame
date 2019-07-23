@@ -330,37 +330,48 @@ view model =
   case model.errorMessage of
     "" ->
       let
-        currentSignup = getCurrentSignup model
-        otherSignup = getOtherSignup model
-        playerStyle = \current -> Attributes.css [
+        maybeCurrentSignup = getCurrentSignup model
+        maybeOtherSignup = getOtherSignup model
+        playerStyle = \current signup -> Attributes.css [
           Css.property "text-align" "center",
-          Css.property "margin" "0.5em",
-          Css.property "font-size" (if current then "4em" else "3em") ]
+          Css.margin <| Css.em 0.5,
+          Css.property "font-size" (if current then "5em" else "3em"),
+          Css.property "font-family" "futuraMediumBT",
+          Css.textShadow4 (Css.px 0) (Css.px 0) (Css.px 3) (toCssColor signup.color),
+          Css.color (Css.rgb 255 255 255),
+          Css.property "-webkit-text-stroke" (renderColor signup.color),
+          Css.property "-webkit-test-stroke-width" "3px" ]
       in
-        div [
-          Attributes.css [
-            Css.property "background-image" ("linear-gradient("
-            ++ (otherSignup |> (executeIfPresent .color defaultBackground) |> renderColor)
-            ++ ","
-            ++ (defaultBackground |> renderColor)
-            ++ ","
-            ++ (defaultBackground |> renderColor)
-            ++ ","
-            ++ (defaultBackground |> renderColor)
-            ++ ","
-            ++ (currentSignup |> (executeIfPresent .color defaultBackground) |> renderColor)
-            ++ ")"),
-            Css.maxWidth <| Css.em 60,
-            Css.height <| Css.pct 100,
-            Css.displayFlex,
-            Css.property "flex-direction" "column",
-            Css.property "justify-content" "space-around"
-          ]
-        ] [
-          div [ playerStyle (isCurrentlyPlaing model.board <| executeIfPresent .playerId 69 otherSignup) ] [ text <| executeIfPresent .userName "None" otherSignup ],
-          renderBoard model.board model.signups,
-          div [ playerStyle (isCurrentlyPlaing model.board <| executeIfPresent .playerId 69 currentSignup) ] [ text <| executeIfPresent .userName "None" currentSignup ]
-        ]
+        case maybeCurrentSignup of
+          Nothing -> div [] [ text "I'm a little clueless on what to do" ]
+          Just currentSignup -> 
+            case maybeOtherSignup of
+              Nothing -> div [] [ text "I'm a little clueless on what to do" ]
+              Just otherSignup -> 
+                div [
+                  Attributes.css [
+                    Css.property "background-image" ("linear-gradient("
+                    ++ (otherSignup.color |> renderColor)
+                    ++ ","
+                    ++ (defaultBackground |> renderColor)
+                    ++ ","
+                    ++ (defaultBackground |> renderColor)
+                    ++ ","
+                    ++ (defaultBackground |> renderColor)
+                    ++ ","
+                    ++ (currentSignup.color |> renderColor)
+                    ++ ")"),
+                    Css.maxWidth <| Css.em 60,
+                    Css.height <| Css.pct 100,
+                    Css.displayFlex,
+                    Css.property "flex-direction" "column",
+                    Css.property "justify-content" "space-around"
+                  ]
+                ] [
+                  div [ playerStyle (otherSignup.playerId |> isCurrentlyPlaing model.board) otherSignup ] [ otherSignup.userName |> text ],
+                  renderBoard model.board model.signups,
+                  div [ playerStyle (currentSignup.playerId |> isCurrentlyPlaing model.board) currentSignup ] [ currentSignup.userName |> text ]
+                ]
     _ ->
       div [] [ text model.errorMessage ]
 

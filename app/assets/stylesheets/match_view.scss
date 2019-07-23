@@ -1,3 +1,11 @@
+@font-face {
+  font-family: 'futuraMediumBT';
+  src:font-url('futuraMediumBT.eot');
+  src:local('futuraMediumBT'), font-url('futuraMediumBT.woff') format('woff'), font-url('futuraMediumBT.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
 #match_view {
   height: 100%;
   body {
