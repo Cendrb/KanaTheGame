@@ -82,8 +82,8 @@ type alias Color =
 
 type alias BoardParameters =
   {
-    unit : Int,
-    offset : Int
+    unit : Float,
+    offset : Float
   }
 
 type alias Flags =
@@ -137,10 +137,10 @@ toCssColor color =
   Css.rgb color.r color.g color.b
 
 createCoordinateTuples : Int -> Int -> List (Int, Int)
-createCoordinateTuples x y =
-  List.range 0 x
+createCoordinateTuples x y = -- non-inclusive on the end
+  List.range 0 (x - 1)
     |> List.concatMap (
-      \xOff -> (List.range 0 y) -- add y variants for each x
+      \xOff -> (List.range 0 (y - 1)) -- add y variants for each x
         |> List.map (\yOff -> (xOff, yOff))
     )
 
@@ -159,9 +159,9 @@ renderGridElements x y params =
       Svg.Styled.Attributes.d "m6.296296,0l38.407408,0c0.881481,3.022222 3.274074,5.288889 6.296296,6.17037l0,38.407408c-3.022222,0.881481 -5.414815,3.274074 -6.296296,6.296296l-38.407408,0c-0.881481,-3.022222 -3.274074,-5.414815 -6.296296,-6.296296l0,-38.407408c3.022222,-0.881481 5.414815,-3.148148 6.296296,-6.17037z",
       Svg.Styled.Attributes.transform (
         "translate("
-        ++ (String.fromInt (Tuple.first coords * params.unit + params.offset))
+        ++ (String.fromFloat (toFloat (Tuple.first coords) * params.unit + params.offset))
         ++ ","
-        ++ (String.fromInt (Tuple.second coords * params.unit + params.offset))
+        ++ (String.fromFloat (toFloat (Tuple.second coords) * params.unit + params.offset))
         ++ ") scale(0.9 0.9)"
       ),
       Svg.Styled.Events.onClick (FieldClicked coords),
@@ -170,12 +170,12 @@ renderGridElements x y params =
       ]
     ] []
   ))
-  ++ (createCoordinateTuples x y |> List.map (
+  ++ (createCoordinateTuples (x + 1) (y + 1) |> List.map (
     \coords -> Svg.Styled.circle
     [
-      Svg.Styled.Attributes.r "4",
-      Svg.Styled.Attributes.cx <| String.fromInt (Tuple.first coords * params.unit + params.offset - 2),
-      Svg.Styled.Attributes.cy <| String.fromInt (Tuple.second coords * params.unit + params.offset - 2),
+      Svg.Styled.Attributes.r "4.3",
+      Svg.Styled.Attributes.cx <| String.fromFloat (toFloat (Tuple.first coords) * params.unit + params.offset - 2),
+      Svg.Styled.Attributes.cy <| String.fromFloat (toFloat (Tuple.second coords) * params.unit + params.offset - 2),
       Svg.Styled.Attributes.css [
         Css.fill <| Css.rgb 255 255 255
       ]
@@ -198,7 +198,7 @@ isStoneSelected stone selectedStoneId =
 renderStones : (List Stone) -> Maybe Int -> BoardParameters -> List (Svg.Styled.Svg Message)
 renderStones stones selectedStoneId params =
   let
-    offset = 22
+    offset = 23
     radius = 20
   in
     stones |> List.map (
@@ -208,9 +208,9 @@ renderStones stones selectedStoneId params =
           Svg.Styled.Attributes.r <| String.fromInt radius,
           Svg.Styled.Attributes.transform <| (
             "translate("
-            ++ String.fromInt (stone.x * params.unit + offset + params.offset + 1)
+            ++ String.fromFloat (toFloat stone.x * params.unit + offset + params.offset)
             ++ ","
-            ++ String.fromInt (stone.y * params.unit + offset + params.offset + 1)
+            ++ String.fromFloat (toFloat stone.y * params.unit + offset + params.offset)
             ++ ")"
           ),
           Svg.Styled.Attributes.fill <| "url(#" ++ (getGradientIdentifier stone.playerId (isStoneSelected stone selectedStoneId))++ ")",
@@ -279,15 +279,17 @@ renderBoard board signups =
   let
     params = BoardParameters
       50
-      3
+      7
   in
-    Svg.Styled.svg [ Svg.Styled.Attributes.viewBox (
-      "0 0 "
-      ++ String.fromFloat (toFloat (board.x * params.unit + params.offset) - 2.5)
-      ++ " "
-      ++ String.fromFloat (toFloat (board.y * params.unit + params.offset) - 2.5)),
+    Svg.Styled.svg [
+      Svg.Styled.Attributes.viewBox (
+        "0 0 "
+        ++ String.fromFloat (toFloat board.x * params.unit + params.offset + 2.5)
+        ++ " "
+        ++ String.fromFloat (toFloat board.y * params.unit + params.offset + 2.5)),
       Svg.Styled.Attributes.css [
-        Css.property "flex" "0 0 auto"
+        Css.property "flex" "0 0 auto",
+        Css.padding <| Css.px 15
       ]
     ] 
     (
@@ -346,15 +348,13 @@ view model =
             ++ ","
             ++ (defaultBackground |> renderColor)
             ++ ","
-            ++ (defaultBackground |> renderColor)
-            ++ ","
             ++ (currentSignup |> (executeIfPresent .color defaultBackground) |> renderColor)
             ++ ")"),
             Css.maxWidth <| Css.em 60,
             Css.height <| Css.pct 100,
             Css.displayFlex,
             Css.property "flex-direction" "column",
-            Css.property "justify-content" "space-between"
+            Css.property "justify-content" "space-around"
           ]
         ] [
           div [ playerStyle (isCurrentlyPlaing model.board <| executeIfPresent .playerId 69 otherSignup) ] [ text <| executeIfPresent .userName "None" otherSignup ],
