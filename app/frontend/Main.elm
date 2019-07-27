@@ -15,6 +15,10 @@ import Html.Styled exposing (..)
 import Html.Styled.Attributes as Attributes
 import Html.Styled.Events as Events
 import Html
+import Svg
+import Svg.Keyed
+import Svg.Attributes
+import Svg.Events
 import Svg.Styled
 import Svg.Styled.Attributes
 import Svg.Styled.Events
@@ -131,6 +135,18 @@ createCoordinateTuples x y = -- non-inclusive on the end
         |> List.map (\yOff -> (xOff, yOff))
     )
 
+renderGridCircle : BoardParameters -> (Int, Int) -> Svg.Styled.Svg Message
+renderGridCircle params coords =
+  Svg.Styled.circle
+  [
+    Svg.Styled.Attributes.r "4.3",
+    Svg.Styled.Attributes.cx <| String.fromFloat (toFloat (Tuple.first coords) * params.unit + params.offset - 2),
+    Svg.Styled.Attributes.cy <| String.fromFloat (toFloat (Tuple.second coords) * params.unit + params.offset - 2),
+    Svg.Styled.Attributes.css [
+      Css.fill <| Css.rgb 255 255 255
+    ]
+  ] []
+
 renderGridElements : Int -> Int -> BoardParameters -> List (Svg.Styled.Svg Message)
 renderGridElements x y params =
   (createCoordinateTuples x y |> List.map (
@@ -150,17 +166,7 @@ renderGridElements x y params =
       ]
     ] []
   ))
-  ++ (createCoordinateTuples (x + 1) (y + 1) |> List.map (
-    \coords -> Svg.Styled.circle
-    [
-      Svg.Styled.Attributes.r "4.3",
-      Svg.Styled.Attributes.cx <| String.fromFloat (toFloat (Tuple.first coords) * params.unit + params.offset - 2),
-      Svg.Styled.Attributes.cy <| String.fromFloat (toFloat (Tuple.second coords) * params.unit + params.offset - 2),
-      Svg.Styled.Attributes.css [
-        Css.fill <| Css.rgb 255 255 255
-      ]
-    ] []
-  ))
+  ++ (createCoordinateTuples (x + 1) (y + 1) |> List.map (renderGridCircle params) )
 
 getGradientIdentifier : Int -> Bool -> String
 getGradientIdentifier playerId isSelected =
@@ -174,33 +180,32 @@ isStoneSelected stone selectedStoneId =
     Nothing ->
       False
 
-renderStones : (List Stone) -> Maybe Int -> BoardParameters -> List (Svg.Styled.Svg Message)
+renderStones : (List Stone) -> Maybe Int -> BoardParameters -> Svg.Styled.Svg Message
 renderStones stones selectedStoneId params =
   let
     offset = 23
     radius = 20
   in
-    stones |> List.map (
+    Svg.Keyed.node "g" [] (stones |> List.map (
       \stone ->
-        Svg.Styled.circle
-        [
-          Svg.Styled.Attributes.r <| String.fromInt radius,
-          Svg.Styled.Attributes.transform <| (
-            "translate("
-            ++ String.fromFloat (toFloat stone.x * params.unit + offset + params.offset)
-            ++ ","
-            ++ String.fromFloat (toFloat stone.y * params.unit + offset + params.offset)
-            ++ ")"
-          ),
-          Svg.Styled.Attributes.fill <| "url(#" ++ (getGradientIdentifier stone.playerId (isStoneSelected stone selectedStoneId))++ ")",
-          Svg.Styled.Attributes.css [
-            Css.Transitions.transition [
-              Css.Transitions.transform3 1000 0 Css.Transitions.easeInOut
-            ]
-          ],
-          Svg.Styled.Events.onClick (StoneClicked stone)
-        ] []
-    )
+        (String.fromInt stone.id,
+          Svg.circle
+          [
+            Svg.Attributes.r <| String.fromInt radius,
+            Svg.Attributes.transform <| (
+              "translate("
+              ++ String.fromFloat (toFloat stone.x * params.unit + offset + params.offset)
+              ++ ","
+              ++ String.fromFloat (toFloat stone.y * params.unit + offset + params.offset)
+              ++ ")"
+            ),
+            Svg.Attributes.fill <| "url(#" ++ (getGradientIdentifier stone.playerId (isStoneSelected stone selectedStoneId))++ ")",
+            Svg.Attributes.style <| "transition: transform 1s ease-in-out;",
+            Svg.Events.onClick (StoneClicked stone)
+          ] []
+        )
+      )
+    ) |> Svg.Styled.fromUnstyled
 
 renderColorTransitions : (Dict Int Signup) -> List (Svg.Styled.Svg Message)
 renderColorTransitions signups =
@@ -254,6 +259,10 @@ renderColorTransitions signups =
     )
   ]
 
+renderShapes : List Shape -> BoardParameters -> Svg.Styled.Svg Message
+renderShapes shapes params =
+  Svg.Styled.g [] []
+
 renderBoard : Board -> (Dict Int Signup) -> Html Message
 renderBoard board signups =
   let
@@ -274,7 +283,8 @@ renderBoard board signups =
     ] 
     (
       (renderGridElements board.x board.y params)
-      ++ (renderStones (board.stones |> Dict.values) board.selectedStoneId params)
+      ++ [renderStones (board.stones |> Dict.values) board.selectedStoneId params]
+      ++ [renderShapes board.shapes params ]
       ++ [
         Svg.Styled.defs [] (renderColorTransitions signups)
       ]
