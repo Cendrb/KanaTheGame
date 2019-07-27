@@ -100,6 +100,13 @@ document.addEventListener('DOMContentLoaded', () => {
             updateBoard({board_data: JSON.parse(data.board_data), fulfilled_shapes: JSON.parse(data.fulfilled_shapes).map(shape => {
               return {...shape, board_data: JSON.parse(shape.board_data)};
             }), currently_playing: data.currently_playing});
+            updateSignups(JSON.parse(data.signups).map(signup => {
+              return {...signup, color: {
+                r: parseInt(signup.color.substring(1, 3), 16),
+                g: parseInt(signup.color.substring(3, 5), 16), 
+                b: parseInt(signup.color.substring(5, 7), 16)}
+              };
+            }));
           }
           break;
       }
