@@ -8,6 +8,7 @@ import Json.Decode.Pipeline as DPipeline
 
 import Browser
 import Dict exposing (Dict)
+import Set exposing (Set)
 import Css
 import Debug
 import Css.Transitions
@@ -65,10 +66,19 @@ type alias Shape =
   {
     id : Int,
     playerId : Int,
+    color : Color.Color,
     name : String,
     points : Int,
     traded : Bool,
-    stones : List Stone
+    stones : List Stone,
+    edges : List Edge,
+    vertices : Set (Int, Int)
+  }
+
+type alias Edge =
+  {
+    from : (Int, Int),
+    to : (Int, Int)
   }
 
 type alias Signup =
@@ -135,38 +145,73 @@ createCoordinateTuples x y = -- non-inclusive on the end
         |> List.map (\yOff -> (xOff, yOff))
     )
 
-renderGridCircle : BoardParameters -> (Int, Int) -> Svg.Styled.Svg Message
-renderGridCircle params coords =
-  Svg.Styled.circle
-  [
-    Svg.Styled.Attributes.r "4.3",
-    Svg.Styled.Attributes.cx <| String.fromFloat (toFloat (Tuple.first coords) * params.unit + params.offset - 2),
-    Svg.Styled.Attributes.cy <| String.fromFloat (toFloat (Tuple.second coords) * params.unit + params.offset - 2),
-    Svg.Styled.Attributes.css [
-      Css.fill <| Css.rgb 255 255 255
-    ]
-  ] []
+renderGridCircle : BoardParameters -> (Dict (Int, Int) Shape) -> (Int, Int) -> Svg.Styled.Svg Message
+renderGridCircle params shapesDict coords =
+  case Dict.get coords shapesDict of
+    Just shape ->
+      Svg.Styled.circle
+      [
+        Svg.Styled.Attributes.r "4.3",
+        Svg.Styled.Attributes.cx <| String.fromFloat (toFloat (Tuple.first coords) * params.unit + params.offset - 2),
+        Svg.Styled.Attributes.cy <| String.fromFloat (toFloat (Tuple.second coords) * params.unit + params.offset - 2),
+        Svg.Styled.Attributes.css [
+          Css.fill <| Color.toCssColor <| shape.color
+        ]
+      ] []
+    Nothing ->
+      Svg.Styled.circle
+      [
+        Svg.Styled.Attributes.r "4.3",
+        Svg.Styled.Attributes.cx <| String.fromFloat (toFloat (Tuple.first coords) * params.unit + params.offset - 2),
+        Svg.Styled.Attributes.cy <| String.fromFloat (toFloat (Tuple.second coords) * params.unit + params.offset - 2),
+        Svg.Styled.Attributes.css [
+          Css.fill <| Css.rgb 255 255 255
+        ]
+      ] []
 
-renderGridElements : Int -> Int -> BoardParameters -> List (Svg.Styled.Svg Message)
-renderGridElements x y params =
-  (createCoordinateTuples x y |> List.map (
-    \coords -> Svg.Styled.path 
-    [
-      Svg.Styled.Attributes.d "m6.296296,0l38.407408,0c0.881481,3.022222 3.274074,5.288889 6.296296,6.17037l0,38.407408c-3.022222,0.881481 -5.414815,3.274074 -6.296296,6.296296l-38.407408,0c-0.881481,-3.022222 -3.274074,-5.414815 -6.296296,-6.296296l0,-38.407408c3.022222,-0.881481 5.414815,-3.148148 6.296296,-6.17037z",
-      Svg.Styled.Attributes.transform (
-        "translate("
-        ++ (String.fromFloat (toFloat (Tuple.first coords) * params.unit + params.offset))
-        ++ ","
-        ++ (String.fromFloat (toFloat (Tuple.second coords) * params.unit + params.offset))
-        ++ ") scale(0.9 0.9)"
-      ),
-      Svg.Styled.Events.onClick (FieldClicked coords),
-      Svg.Styled.Attributes.css [
-        Css.fill <| Css.rgb 255 255 255
-      ]
+renderGridEdge : BoardParameters -> (Edge, Shape) -> Svg.Styled.Svg Message
+renderGridEdge params (edge, shape) =
+  let
+    offset = -2
+  in
+    Svg.Styled.line [
+      Svg.Styled.Attributes.x1 <| String.fromFloat <| toFloat(Tuple.first edge.from) * params.unit + params.offset + offset,
+      Svg.Styled.Attributes.y1 <| String.fromFloat <| toFloat(Tuple.second edge.from) * params.unit + params.offset + offset,
+      Svg.Styled.Attributes.x2 <| String.fromFloat <| toFloat(Tuple.first edge.to) * params.unit + params.offset + offset,
+      Svg.Styled.Attributes.y2 <| String.fromFloat <| toFloat(Tuple.second edge.to) * params.unit + params.offset + offset,
+      Svg.Styled.Attributes.stroke <| Color.renderColor <| shape.color,
+      Svg.Styled.Attributes.strokeWidth "2"
     ] []
-  ))
-  ++ (createCoordinateTuples (x + 1) (y + 1) |> List.map (renderGridCircle params) )
+
+renderGridElements : Int -> Int -> (List Shape) -> BoardParameters -> List (Svg.Styled.Svg Message)
+renderGridElements x y shapes params =
+  let
+    verticesShapesDict = shapes |> List.map (
+        \shape -> shape.vertices |> Set.toList |> List.map (\vertex -> (vertex, shape)) |> Dict.fromList
+      ) |> List.foldl Dict.union Dict.empty
+    edgesShapesDict = shapes |> List.concatMap (
+        \shape -> shape.edges |> List.map (\edge -> (edge, shape))
+      )
+  in
+    (createCoordinateTuples x y |> List.map (
+      \coords -> Svg.Styled.path 
+      [
+        Svg.Styled.Attributes.d "m6.296296,0l38.407408,0c0.881481,3.022222 3.274074,5.288889 6.296296,6.17037l0,38.407408c-3.022222,0.881481 -5.414815,3.274074 -6.296296,6.296296l-38.407408,0c-0.881481,-3.022222 -3.274074,-5.414815 -6.296296,-6.296296l0,-38.407408c3.022222,-0.881481 5.414815,-3.148148 6.296296,-6.17037z",
+        Svg.Styled.Attributes.transform (
+          "translate("
+          ++ (String.fromFloat (toFloat (Tuple.first coords) * params.unit + params.offset))
+          ++ ","
+          ++ (String.fromFloat (toFloat (Tuple.second coords) * params.unit + params.offset))
+          ++ ") scale(0.9 0.9)"
+        ),
+        Svg.Styled.Events.onClick (FieldClicked coords),
+        Svg.Styled.Attributes.css [
+          Css.fill <| Css.rgb 255 255 255
+        ]
+      ] []
+    ))
+    ++ (edgesShapesDict |> List.map (renderGridEdge params))
+    ++ (createCoordinateTuples (x + 1) (y + 1) |> List.map (renderGridCircle params verticesShapesDict) )
 
 getGradientIdentifier : Int -> Bool -> String
 getGradientIdentifier playerId isSelected =
@@ -269,6 +314,7 @@ renderBoard board signups =
     params = BoardParameters
       50
       7
+    shapesToRender = board.shapes
   in
     Svg.Styled.svg [
       Svg.Styled.Attributes.viewBox (
@@ -282,9 +328,9 @@ renderBoard board signups =
       ]
     ] 
     (
-      (renderGridElements board.x board.y params)
+      (renderGridElements board.x board.y shapesToRender params)
       ++ [renderStones (board.stones |> Dict.values) board.selectedStoneId params]
-      ++ [renderShapes board.shapes params ]
+      ++ [renderShapes shapesToRender params ]
       ++ [
         Svg.Styled.defs [] (renderColorTransitions signups)
       ]
@@ -650,6 +696,51 @@ signupsDecoder =
     |> DPipeline.required "spent_points" Decode.int
     |> DPipeline.required "color" Color.colorDecoder)
 
+edgeDecoder : Decode.Decoder (List Edge)
+edgeDecoder =
+  (Decode.list stoneDecoder) |> Decode.andThen (
+    \stones -> Decode.succeed <| stonesToEdges <| stones
+  )
+
+stonesToEdges : List Stone -> List Edge
+stonesToEdges stones =
+  stones |> List.concatMap (
+    \stone ->
+      List.concat [
+        case stones |> (List.filter (\s -> s.x == stone.x + 1 && s.y == stone.y)) |> List.head of
+          Just foundStone -> []
+          Nothing -> [Edge (stone.x + 1, stone.y) (stone.x + 1, stone.y + 1)]
+        ,
+        case stones |> (List.filter (\s -> s.x == stone.x && s.y == stone.y + 1)) |> List.head of
+          Just foundStone -> []
+          Nothing -> [Edge (stone.x, stone.y + 1) (stone.x + 1, stone.y + 1)]
+        ,
+        case stones |> (List.filter (\s -> s.x == stone.x - 1 && s.y == stone.y)) |> List.head of
+          Just foundStone -> []
+          Nothing -> [Edge (stone.x, stone.y) (stone.x , stone.y + 1)]
+        ,
+        case stones |> (List.filter (\s -> s.x == stone.x && s.y == stone.y - 1)) |> List.head of
+          Just foundStone -> []
+          Nothing -> [Edge (stone.x, stone.y) (stone.x + 1, stone.y )]
+      ]
+  )
+
+vertexDecoder : Decode.Decoder (Set (Int, Int))
+vertexDecoder =
+  (Decode.list stoneDecoder) |> Decode.andThen (
+    \stones -> Decode.succeed <| stonesToVertices <| stones
+  )
+
+stonesToVertices : List Stone -> Set (Int, Int)
+stonesToVertices stones =
+  stones |> stonesToEdges |> List.concatMap (
+    \edge ->
+      [
+        (Tuple.first edge.from, Tuple.second edge.from),
+        (Tuple.first edge.to, Tuple.second edge.to)
+      ]
+  ) |> Set.fromList
+
 stoneDecoder : Decode.Decoder Stone
 stoneDecoder =
   Decode.succeed Stone 
@@ -660,13 +751,16 @@ stoneDecoder =
 
 shapesDecoder : Decode.Decoder (List Shape)
 shapesDecoder =
-  Decode.list <| (Decode.succeed Shape 
+  Decode.andThen (\shapes -> Decode.succeed (List.sortBy .points shapes)) <| Decode.list <| (Decode.succeed Shape 
     |> DPipeline.required "id" Decode.int
     |> DPipeline.required "player_id" Decode.int
+    |> DPipeline.required "color" Color.colorDecoder
     |> DPipeline.required "name" Decode.string
     |> DPipeline.required "points" Decode.int
     |> DPipeline.required "traded" Decode.bool
-    |> DPipeline.requiredAt [ "board_data", "stones" ] (Decode.list stoneDecoder))
+    |> DPipeline.requiredAt [ "board_data", "stones" ] (Decode.list stoneDecoder)
+    |> DPipeline.requiredAt [ "board_data", "stones" ] edgeDecoder
+    |> DPipeline.requiredAt [ "board_data", "stones" ] vertexDecoder)
 
 boardDecoder : Decode.Decoder Board
 boardDecoder =

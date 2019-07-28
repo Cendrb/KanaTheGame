@@ -98,7 +98,11 @@ document.addEventListener('DOMContentLoaded', () => {
         case 'board_render':
           if(data.target_user_id === current_user_id || data.target_user_id === -1) {
             updateBoard({board_data: JSON.parse(data.board_data), fulfilled_shapes: JSON.parse(data.fulfilled_shapes).map(shape => {
-              return {...shape, board_data: JSON.parse(shape.board_data)};
+              return {...shape, board_data: JSON.parse(shape.board_data), color: {
+                r: parseInt(shape.color.substring(1, 3), 16),
+                g: parseInt(shape.color.substring(3, 5), 16), 
+                b: parseInt(shape.color.substring(5, 7), 16)}
+              };
             }), currently_playing: data.currently_playing});
             updateSignups(JSON.parse(data.signups).map(signup => {
               return {...signup, color: {

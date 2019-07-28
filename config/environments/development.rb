@@ -52,5 +52,5 @@ Rails.application.configure do
   config.action_cable.url = 'ws://mewni.asuscomm.com:3000/cable'
   config.action_cable.allowed_request_origins = ["https://mewni.asuscomm.com:3000", "http://mewni.asuscomm.com:3000"]
 
-  config.web_console.whitelisted_ips = '192.168.1.105'
+  config.web_console.whitelisted_ips = '192.168.1.1'
 end
