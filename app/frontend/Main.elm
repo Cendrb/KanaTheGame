@@ -7,6 +7,7 @@ import Json.Encode as Encode
 import Json.Decode.Pipeline as DPipeline
 
 import Browser
+import List.Extra
 import Dict exposing (Dict)
 import Set exposing (Set)
 import Css
@@ -65,7 +66,7 @@ type alias Shape =
   {
     id : Int,
     playerId : Int,
-    color : Color.Color,
+    playerColor : Color.Color,
     name : String,
     points : Int,
     traded : Bool,
@@ -144,17 +145,17 @@ createCoordinateTuples x y = -- non-inclusive on the end
         |> List.map (\yOff -> (xOff, yOff))
     )
 
-renderGridCircle : BoardParameters -> (Dict (Int, Int) Shape) -> (Int, Int) -> Svg.Styled.Svg Message
+renderGridCircle : BoardParameters -> (Dict (Int, Int) Color.Color) -> (Int, Int) -> Svg.Styled.Svg Message
 renderGridCircle params shapesDict coords =
   case Dict.get coords shapesDict of
-    Just shape ->
+    Just color ->
       Svg.Styled.circle
       [
         Svg.Styled.Attributes.r "4.3",
         Svg.Styled.Attributes.cx <| String.fromFloat (toFloat (Tuple.first coords) * params.unit + params.offset - 2),
         Svg.Styled.Attributes.cy <| String.fromFloat (toFloat (Tuple.second coords) * params.unit + params.offset - 2),
         Svg.Styled.Attributes.css [
-          Css.fill <| Color.toCssColor <| shape.color
+          Css.fill <| Color.toCssColor <| color
         ]
       ] []
     Nothing ->
@@ -168,8 +169,8 @@ renderGridCircle params shapesDict coords =
         ]
       ] []
 
-renderGridEdge : BoardParameters -> (Edge, Shape) -> Svg.Styled.Svg Message
-renderGridEdge params (edge, shape) =
+renderGridEdge : BoardParameters -> (Edge, Color.Color) -> Svg.Styled.Svg Message
+renderGridEdge params (edge, color) =
   let
     offset = -2
   in
@@ -178,19 +179,33 @@ renderGridEdge params (edge, shape) =
       Svg.Styled.Attributes.y1 <| String.fromFloat <| toFloat(Tuple.second edge.from) * params.unit + params.offset + offset,
       Svg.Styled.Attributes.x2 <| String.fromFloat <| toFloat(Tuple.first edge.to) * params.unit + params.offset + offset,
       Svg.Styled.Attributes.y2 <| String.fromFloat <| toFloat(Tuple.second edge.to) * params.unit + params.offset + offset,
-      Svg.Styled.Attributes.stroke <| Color.renderColor <| shape.color,
-      Svg.Styled.Attributes.strokeWidth "2"
+      Svg.Styled.Attributes.stroke <| Color.renderColor <| color,
+      Svg.Styled.Attributes.strokeWidth "1.5"
     ] []
+
+getShapePriorityColor : Shape -> Int -> item -> (item, Color.Color)
+getShapePriorityColor shape priority item =
+  (item, Color.fromRgb 
+    255
+    (255 - priority * 70)
+    0
+  )
 
 renderGridElements : Int -> Int -> (List Shape) -> BoardParameters -> List (Svg.Styled.Svg Message)
 renderGridElements x y shapes params =
   let
-    verticesShapesDict = shapes |> List.map (
-        \shape -> shape.vertices |> Set.toList |> List.map (\vertex -> (vertex, shape)) |> Dict.fromList
+    verticesColorsDict = shapes |> List.Extra.gatherWith (\s1 s2 -> s1.points == s2.points) |> List.indexedMap (
+        \index (determiningShape, restShapes) ->
+          (restShapes ++ [determiningShape]) |> List.concatMap (
+            \shape -> shape.vertices |> Set.toList |> List.map (getShapePriorityColor shape index)
+          ) |> Dict.fromList
       ) |> List.foldl Dict.union Dict.empty
-    edgesShapesDict = shapes |> List.concatMap (
-        \shape -> shape.edges |> List.map (\edge -> (edge, shape))
-      )
+    edgesColorsTuples = shapes |> List.Extra.gatherWith (\s1 s2 -> s1.points == s2.points) |> List.indexedMap (
+        \index (determiningShape, restShapes) ->
+          (restShapes ++ [determiningShape]) |> List.concatMap (
+            \shape -> shape.edges |> List.map (getShapePriorityColor shape index)
+          )
+      ) |> List.concat
   in
     (createCoordinateTuples x y |> List.map (
       \coords -> Svg.Styled.path 
@@ -209,8 +224,8 @@ renderGridElements x y shapes params =
         ]
       ] []
     ))
-    ++ (edgesShapesDict |> List.map (renderGridEdge params))
-    ++ (createCoordinateTuples (x + 1) (y + 1) |> List.map (renderGridCircle params verticesShapesDict) )
+    ++ (edgesColorsTuples |> List.map (renderGridEdge params))
+    ++ (createCoordinateTuples (x + 1) (y + 1) |> List.map (renderGridCircle params verticesColorsDict) )
 
 getGradientIdentifier : Int -> Bool -> String
 getGradientIdentifier playerId isSelected =
