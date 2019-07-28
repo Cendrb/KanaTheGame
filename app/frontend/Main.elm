@@ -57,8 +57,7 @@ type alias Board =
 type alias Stone =
   {
     id : Int,
-    x : Int,
-    y : Int,
+    coords : (Int, Int),
     playerId : Int
   }
 
@@ -239,9 +238,9 @@ renderStones stones selectedStoneId params =
             Svg.Attributes.r <| String.fromInt radius,
             Svg.Attributes.transform <| (
               "translate("
-              ++ String.fromFloat (toFloat stone.x * params.unit + offset + params.offset)
+              ++ String.fromFloat (toFloat (Tuple.first stone.coords) * params.unit + offset + params.offset)
               ++ ","
-              ++ String.fromFloat (toFloat stone.y * params.unit + offset + params.offset)
+              ++ String.fromFloat (toFloat (Tuple.second stone.coords) * params.unit + offset + params.offset)
               ++ ")"
             ),
             Svg.Attributes.fill <| "url(#" ++ (getGradientIdentifier stone.playerId (isStoneSelected stone selectedStoneId))++ ")",
@@ -306,15 +305,39 @@ renderColorTransitions signups =
 
 renderShapes : List Shape -> BoardParameters -> Svg.Styled.Svg Message
 renderShapes shapes params =
-  Svg.Styled.g [] []
+  let
+    positionShapeDict = shapes
+      |> List.concatMap (\shape -> shape.stones |> List.map (\stone -> (stone.coords, shape)))
+      |> Dict.fromList
+    offset = -2
+  in
+    Svg.Styled.g [] (positionShapeDict
+       |> Dict.toList
+       |> List.map (\((x, y), shape) ->
+            Svg.Styled.rect [
+              Svg.Styled.Attributes.x <| String.fromFloat <| toFloat(x) * params.unit + params.offset + offset,
+              Svg.Styled.Attributes.y <| String.fromFloat <| toFloat(y) * params.unit + params.offset + offset,
+              Svg.Styled.Attributes.width <| String.fromFloat <| params.unit,
+              Svg.Styled.Attributes.height <| String.fromFloat <| params.unit,
+              Svg.Styled.Attributes.fill "transparent",
+              Svg.Styled.Events.onClick <| TradeShape shape,
+              Svg.Styled.Attributes.css [
+                Css.cursor Css.pointer
+              ]
+            ] []
+          )
+    )
 
-renderBoard : Board -> (Dict Int Signup) -> Html Message
-renderBoard board signups =
+renderBoard : Board -> (Dict Int Signup) -> Role -> Html Message
+renderBoard board signups role =
   let
     params = BoardParameters
       50
       7
-    shapesToRender = board.shapes
+    shapesToRender = board.shapes |> List.filter (\shape -> not shape.traded && case role of
+        Spectator -> True
+        Player id -> shape.playerId == id
+      )
   in
     Svg.Styled.svg [
       Svg.Styled.Attributes.viewBox (
@@ -524,7 +547,7 @@ view model =
                   ]
                 ] [
                   renderTopScore otherSignup model.board,
-                  renderBoard model.board model.signups,
+                  renderBoard model.board model.signups model.role,
                   renderBottomScore currentSignup model.board,
                   renderBottomButtons
                 ]
@@ -541,6 +564,7 @@ type Message
   | BoardReceived (Result Decode.Error Board)
   | StoneClicked Stone
   | FieldClicked (Int, Int)
+  | TradeShape Shape
 
 -- PORTS
 port statePort : (String -> msg) -> Sub msg
@@ -548,6 +572,7 @@ port signupsPort : (Decode.Value -> msg) -> Sub msg
 port rolePort : (Decode.Value -> msg) -> Sub msg
 port boardPort : (Decode.Value -> msg) -> Sub msg
 
+port tradeShapePort : Int -> Cmd msg
 port playPort : Encode.Value -> Cmd msg
 
 -- UPDATE
@@ -602,7 +627,7 @@ updateToPlayAt model selectedStoneId coords =
         if canTouchStone model prevSelectedStone then
         (
           {model | board = model.board |> setSelectedStoneId (Nothing)},
-          createPlayCommand (prevSelectedStone.x, prevSelectedStone.y) coords
+          createPlayCommand prevSelectedStone.coords coords
         )
         else
           (model, Cmd.none)
@@ -643,7 +668,7 @@ update message model =
     StoneClicked stone ->
       case model.board.selectedStoneId of
         Just selectedStoneId ->
-          updateToPlayAt model selectedStoneId (stone.x, stone.y)
+          updateToPlayAt model selectedStoneId stone.coords
         Nothing ->
           if canTouchStone model stone then
             ({model | board = model.board |> setSelectedStoneId (Just stone.id)}, Cmd.none)
@@ -655,6 +680,8 @@ update message model =
           updateToPlayAt model selectedStoneId coords
         Nothing ->
           (model, Cmd.none)
+    TradeShape shape ->
+      (model, tradeShapePort shape.id)
 
 -- SUBSCRIPTIONS
 
@@ -705,24 +732,27 @@ edgeDecoder =
 stonesToEdges : List Stone -> List Edge
 stonesToEdges stones =
   stones |> List.concatMap (
-    \stone ->
-      List.concat [
-        case stones |> (List.filter (\s -> s.x == stone.x + 1 && s.y == stone.y)) |> List.head of
-          Just foundStone -> []
-          Nothing -> [Edge (stone.x + 1, stone.y) (stone.x + 1, stone.y + 1)]
-        ,
-        case stones |> (List.filter (\s -> s.x == stone.x && s.y == stone.y + 1)) |> List.head of
-          Just foundStone -> []
-          Nothing -> [Edge (stone.x, stone.y + 1) (stone.x + 1, stone.y + 1)]
-        ,
-        case stones |> (List.filter (\s -> s.x == stone.x - 1 && s.y == stone.y)) |> List.head of
-          Just foundStone -> []
-          Nothing -> [Edge (stone.x, stone.y) (stone.x , stone.y + 1)]
-        ,
-        case stones |> (List.filter (\s -> s.x == stone.x && s.y == stone.y - 1)) |> List.head of
-          Just foundStone -> []
-          Nothing -> [Edge (stone.x, stone.y) (stone.x + 1, stone.y )]
-      ]
+    \{id, coords} ->
+      let
+        (x, y) = coords
+      in
+        List.concat [
+          case stones |> (List.filter (\stone -> (Tuple.first stone.coords) == x + 1 && (Tuple.second stone.coords) == y)) |> List.head of
+            Just foundStone -> []
+            Nothing -> [Edge (x + 1, y) (x + 1, y + 1)]
+          ,
+          case stones |> (List.filter (\stone -> (Tuple.first stone.coords) == x && (Tuple.second stone.coords) == y + 1)) |> List.head of
+            Just foundStone -> []
+            Nothing -> [Edge (x, y + 1) (x + 1, y + 1)]
+          ,
+          case stones |> (List.filter (\stone -> (Tuple.first stone.coords) == x - 1 && (Tuple.second stone.coords) == y)) |> List.head of
+            Just foundStone -> []
+            Nothing -> [Edge (x, y) (x, y + 1)]
+          ,
+          case stones |> (List.filter (\stone -> (Tuple.first stone.coords) == x && (Tuple.second stone.coords) == y - 1)) |> List.head of
+            Just foundStone -> []
+            Nothing -> [Edge (x, y) (x + 1, y )]
+        ]
   )
 
 vertexDecoder : Decode.Decoder (Set (Int, Int))
@@ -741,12 +771,17 @@ stonesToVertices stones =
       ]
   ) |> Set.fromList
 
+coordsDecoder : Decode.Decoder (Int, Int)
+coordsDecoder =
+  Decode.succeed Tuple.pair
+    |> DPipeline.required "x" Decode.int
+    |> DPipeline.required "y" Decode.int
+
 stoneDecoder : Decode.Decoder Stone
 stoneDecoder =
   Decode.succeed Stone 
     |> DPipeline.required "id" Decode.int
-    |> DPipeline.required "x" Decode.int
-    |> DPipeline.required "y" Decode.int
+    |> DPipeline.custom coordsDecoder
     |> DPipeline.required "player_id" Decode.int
 
 shapesDecoder : Decode.Decoder (List Shape)

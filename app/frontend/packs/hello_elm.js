@@ -27,6 +27,10 @@ document.addEventListener('DOMContentLoaded', () => {
         channel.play(data);
       });
 
+      app.ports.tradeShapePort.subscribe(shapeId => {
+        channel.tradeShape(shapeId);
+      });
+
       document.getElementById("repopulate_button").addEventListener("click", () => {
         channel.repopulate();
       });
@@ -117,6 +121,9 @@ document.addEventListener('DOMContentLoaded', () => {
     },
     play: function (data) {
       return this.perform("play", { sourceX: data.from.x, sourceY: data.from.y, targetX: data.to.x, targetY: data.to.y });
+    },
+    tradeShape: function(shapeId) {
+      return this.perform("trade_shape", {id: shapeId});
     },
     repopulate: function (data) {
       return this.perform("repopulate");
